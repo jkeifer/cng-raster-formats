@@ -2,7 +2,7 @@ services:
   jupyter:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     volumes:
       - .:/home/jovyan
     ports:
