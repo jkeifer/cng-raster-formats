@@ -1,0 +1,9 @@
+services:
+  jupyter:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    volumes:
+      - .:/home/jovyan
+    ports:
+      - "${JUPYTER_PORT:-8888}:8888"
