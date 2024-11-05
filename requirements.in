@@ -1,2 +1,5 @@
+folium
 jupyterlab
+numpy
 pystac-client
+shapely
