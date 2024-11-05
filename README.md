@@ -4,6 +4,8 @@ Originally created for the FOSS4G 2024 workshop ["Deep Dive into Cloud-Native
 Geospatial Raster
 Formats"](https://talks.osgeo.org/foss4g-2024-workshop/talk/TNYSY9/).
 
+[**Workshop slidedeck (Google Docs)**](https://docs.google.com/presentation/d/1qFckA0prY604I4dMkQlF1ZM-QSKS2ou4-YttgGQHzOU/)
+
 ## Getting Started
 
 The interesting contents of this repo are, primarily, the Jupyter notebooks in
