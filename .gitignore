@@ -1,6 +1,9 @@
 # Jupyter
 .local/
 .jupyter/
+.bash_history
+.npm/
+.yarn/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
