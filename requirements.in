@@ -1,6 +1,6 @@
-geopandas
+folium
 jupyterlab
-leafmap
 numpy
+pyproj
 pystac-client
 shapely
