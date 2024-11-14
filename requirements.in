@@ -1,6 +1,9 @@
+adlfs
 folium
 jupyterlab
 numpy
+numcodecs
+planetary-computer[adlfs]
 pyproj
 pystac-client
 shapely
