@@ -1,5 +1,5 @@
-adlfs
 folium
+fsspec
 jupyterlab
 numpy
 numcodecs
@@ -7,3 +7,5 @@ planetary-computer[adlfs]
 pyproj
 pystac-client
 shapely
+xarray
+zarr
