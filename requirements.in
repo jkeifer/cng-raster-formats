@@ -1,6 +1,7 @@
 folium
 fsspec
 jupyterlab
+kerchunk
 numpy
 numcodecs
 planetary-computer[adlfs]
