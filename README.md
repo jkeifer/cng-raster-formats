@@ -114,3 +114,13 @@ see the codespace listed, and a button with three dots `...` next to it. Click
 that button to open a menu with more actions for the codespace, then select
 "Open in JupyterLab". Select a notebook from the `notebooks` directory and work
 through it.
+
+> [!WARNING]
+> Be sure to stop the codespace when not actively working in it to prevent usage
+> time accruing while the environment is idle.
+>
+> GitHub only includes a small number of hours per user per month for free (as
+> of time of writing this is 60 hours of runtime for the basic 2-code
+> instance).  Running out of that free usage time allowance could result in
+> Codespaces being unavailable until the next month or being billed for usage
+> charges.
