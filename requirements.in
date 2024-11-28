@@ -4,6 +4,7 @@ jupyterlab
 kerchunk
 numpy
 numcodecs
+odc-geo
 planetary-computer[adlfs]
 pyproj
 pystac-client
