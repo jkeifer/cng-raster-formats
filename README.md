@@ -1,5 +1,7 @@
 # Exploring Cloud-Native Geospatial Formats: A Hands-on Workshop for Raster Data
 
+[Slides for the 2025-01-22 talk can be found here.](https://docs.google.com/presentation/d/1k5m2eYV8Tv4YrTAL6pfjmZMhls51cChW_QO1vcXH_0U/edit?usp=sharing)
+
 ## Workshop Overview
 
 Ever wonder what GDAL is doing under the hood when you read a GeoTIFF file?
@@ -41,12 +43,12 @@ experience with COGs. Lastly we'll turn our attention to Kerchunk/VirtualiZarr
 to see how these technologies might allow us to optimize data access for
 non-cloud-native formats.
 
-### Prerequsites
+### Prerequisites
 
-This workshops expects some familarity with geospatial programming in Python.
+This workshops expects some familiarity with geospatial programming in Python.
 Most of the notebook code is already provided, so any gaps in understanding
-don't necessarily prohibit completing the exercies. That said, a basic
-knowlegde of Cloud-Native Geospatial Python tooling and working with rasters as
+don't necessarily prohibit completing the exercises. That said, a basic
+knowledge of Cloud-Native Geospatial Python tooling and working with rasters as
 single and multidimensional arrays is quite helpful.
 
 A good primer workshop is Alex Leith of Auspatious's [Cloud-Native Geospatial
@@ -54,19 +56,6 @@ for Earth Observation Workshop](
 https://github.com/auspatious/cloud-native-geospatial-eo-workshop).
 It is recommended to work through those activities or have an equivalent
 knowledge prior to working through the notebooks in this workshop.
-
-### Slides
-
-The format of this workshop is part lecture with slides and part hands-on with
-Python notebooks. The slides can be found at the link below.
-
-[**Workshop slidedeck (Google Docs)**](https://docs.google.com/presentation/d/1qFckA0prY604I4dMkQlF1ZM-QSKS2ou4-YttgGQHzOU/)
-
-### Origin
-
-This workshop was originally created for FOSS4G 2024 and was presented as a
-["Deep Dive into Cloud-Native Geospatial Raster
-Formats"](https://talks.osgeo.org/foss4g-2024-workshop/talk/TNYSY9/).
 
 ## Getting Started
 
@@ -134,7 +123,7 @@ compose command via the `-d` flag.
 JupyterLab will be started with no authentication, running on port 8888 (by
 default; use the env var `JUPYTER_PORT` to change it if that port is already
 taken on your machine). Open a web browser and browse to
-[`http://127.0.0.1:8888`](http://127.0.0.1:8888) to open the JupterLab
+[`http://127.0.0.1:8888`](http://127.0.0.1:8888) to open the JupyterLab
 interface. Select a notebook from the `notebooks` directory and work through
 it.
 
@@ -176,3 +165,20 @@ jupyter lab
 Jupyter should automatically launch the JupyterLab interface in a web browser
 with this project loaded. Select a notebook from the `notebooks` directory and
 work through it.
+
+## Presentation History
+
+### Origin
+
+This workshop was originally created for FOSS4G 2024 and was presented as a
+["Deep Dive into Cloud-Native Geospatial Raster
+Formats"](https://talks.osgeo.org/foss4g-2024-workshop/talk/TNYSY9/). The
+slides from [that particular presentation are
+here](https://docs.google.com/presentation/d/1qFckA0prY604I4dMkQlF1ZM-QSKS2ou4-YttgGQHzOU/).
+
+### All Workshop Presentations
+
+| Date | Location | Notes |
+| ---- | -------- | ----- |
+| 2025-01-22 | Online (Virtual) | Partial presentation (only COG notebook) for users in Oceania. [Slides specific to this presentation.](https://docs.google.com/presentation/d/1k5m2eYV8Tv4YrTAL6pfjmZMhls51cChW_QO1vcXH_0U/edit?usp=sharing) |
+| 2024-12-03 | FOSS4G Belém, Brazil | Original presentation. |
