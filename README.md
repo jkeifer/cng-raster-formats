@@ -1,6 +1,6 @@
 # Exploring Cloud-Native Geospatial Formats: A Hands-on Workshop for Raster Data
 
-[Slides for the 2025-01-22 talk can be found here.](https://docs.google.com/presentation/d/1k5m2eYV8Tv4YrTAL6pfjmZMhls51cChW_QO1vcXH_0U/edit?usp=sharing)
+[Slides for the 2025-05-01 CNG Conf workshop are here.](https://docs.google.com/presentation/d/1nBKAhig0mXkxbzxLRGgu9ygY7Uc028pbdL4qQmlyZ4c/)
 
 ## Workshop Overview
 
@@ -178,7 +178,8 @@ here](https://docs.google.com/presentation/d/1qFckA0prY604I4dMkQlF1ZM-QSKS2ou4-Y
 
 ### All Workshop Presentations
 
-| Date | Location | Notes |
-| ---- | -------- | ----- |
-| 2025-01-22 | Online (Virtual) | Partial presentation (only COG notebook) for users in Oceania. [Slides specific to this presentation.](https://docs.google.com/presentation/d/1k5m2eYV8Tv4YrTAL6pfjmZMhls51cChW_QO1vcXH_0U/edit?usp=sharing) |
-| 2024-12-03 | FOSS4G Belém, Brazil | Original presentation. |
+| Date | Location | Slides | Notes |
+| ---- | -------- | ------ | ----- |
+| 2025-05-01 | CNG Conference | [Link](https://docs.google.com/presentation/d/1nBKAhig0mXkxbzxLRGgu9ygY7Uc028pbdL4qQmlyZ4c/) | Partial presentation (only COG notebook) as part of [a combined workshop on CNG for EO](https://conference.cloudnativegeo.org/CNGConference2025#/workshops?lang=en#CNG%20Workshop:~:text=CNG%20for%20EO%20and%20Deep%20Dive%20into%20Cloud%2DNative%20Geospatial%20Raster%20Formats). |
+| 2025-01-22 | Online (Virtual) | [Link](https://docs.google.com/presentation/d/1k5m2eYV8Tv4YrTAL6pfjmZMhls51cChW_QO1vcXH_0U/) | Partial presentation (only COG notebook) for users in Oceania. |
+| 2024-12-03 | FOSS4G Belém, Brazil | [Link](https://docs.google.com/presentation/d/1qFckA0prY604I4dMkQlF1ZM-QSKS2ou4-YttgGQHzOU/) | Original presentation. |
