@@ -9,6 +9,8 @@ odc-geo
 planetary-computer[adlfs]
 pyproj
 pystac-client
+rioxarray
 shapely
+tifffile
 xarray
 zarr
