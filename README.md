@@ -1,6 +1,10 @@
 # Exploring Cloud-Native Geospatial Formats: A Hands-on Workshop for Raster Data
 
-[Slides for the 2025-05-01 CNG Conf workshop are here.](https://docs.google.com/presentation/d/1nBKAhig0mXkxbzxLRGgu9ygY7Uc028pbdL4qQmlyZ4c/)
+[Slides for the 2025-11 FOSS4G workshops are here.](https://docs.google.com/presentation/d/1oJ48g9Oc-60MlG2_wFTlAHo42SMYFGeiRG66Pc6cr48)
+
+Using the docker execution method is recommended due to the uncertainty
+conference internet quality. But GitHub Codespaces can be a good fallback
+option for those that need a simpler solution.
 
 ## Workshop Overview
 
@@ -72,24 +76,30 @@ GitHub codespaces are recommended if considering ease of use alone.
 
 ### Running in GitHub Codespaces (recommended as easiest approach)
 
-This method is also recommended because it does not require any user
-configuration to get up and running. However, it does depend on an external,
-web-based service, which may not be ideal in environments with unknown internet
-quality (i.e., FOSS4G). This said, it does not require the user to run anything
-locally beyond a web browser, which may be necessary for users with Windows or
-administratively locked-down machines.
+This method does not require any environment setup, repo cloning, or having to
+execute any code locally. However, it does depend on an external, web-based
+service, which may not be ideal in environments with unknown internet quality
+(i.e., conferences). Codespaces also sometimes have instability or weirdness
+that does not occur when executing locally. But the fact that all this option
+requires is a GitHub account and a web browser means it can be a great solution
+for many users.
 
-To use GitHub Codespaces, browse to [the project repo in
-Github](https://github.com/jkeifer/cng-raster-formats). There, click the green
-`<> Code` dropdown button, select the `Codespaces` tab in the dropdown menu,
-then click the button to add a new codespace from the `main` branch.
+To use GitHub Codespaces, first login to GitHub. Then, browse to [the project
+repo in Github](https://github.com/jkeifer/cng-raster-formats). There, click
+the green `<> Code` dropdown button, select the `Codespaces` tab in the
+dropdown menu, then click the button to add a new codespace from the `main`
+branch.
 
-Once the codespace is fully started, go back into the codespaces dropdown menu
-on the project repo page (you will likely need to refresh the page). You should
-see the codespace listed, and a button with three dots `...` next to it. Click
-that button to open a menu with more actions for the codespace, then select
-"Open in JupyterLab". Select a notebook from the `notebooks` directory and work
-through it.
+The codespace will launch in a new browser tab, running the web version of VS
+Code. The notebooks can be opened and executed directly in this interface.
+
+Codespaces also have experimental JupyterLab support. For users that might want
+to try this, wait for the codespace to fully initialize. Then, go back to the
+repo in GitHub and open the codespaces dropdown menu (you will likely need to
+refresh the page). You should see the codespace listed, and a button with three
+dots `...` next to it. Click that button to open a menu with more actions for
+the codespace, then select "Open in JupyterLab". Select a notebook from the
+`notebooks` directory and work through it.
 
 ### Running locally with docker (recommended for local executions)
 
@@ -127,11 +137,13 @@ taken on your machine). Open a web browser and browse to
 interface. Select a notebook from the `notebooks` directory and work through
 it.
 
-### Running locally without docker (least recommended approach)
+### Running locally without docker
 
 This approach is not recommended as it is more subject to local environment
 differences than the docker-based approaches. But it does have the benefit of
-not requiring docker as a dependency.
+not requiring docker as a dependency. For users on Linux or MacOS that have
+experience managing a python environment, this may quite honestly be the best
+option.
 
 Note that the instructions below were written with a MacOS/Linux environment in
 mind. Windows users will likely need to leverage something like [git for
@@ -139,32 +151,19 @@ Windows](https://gitforwindows.org/) and the included Git BASH tool to follow
 along (WSL is also likely a viable solution to get a Linux environment on a
 Windows machine).
 
-To get started, clone this repository and set up a python venv. Python >=3.12
-is recommended:
+To get started, clone this repository and start up JupyterLab. Python >=3.13
+is required, as is a recent installation of `uv`:
 
 ```commandline
 git clone https://github.com/jkeifer/cng-raster-formats.git
 cd cng-raster-formats
-python -m venv .venv
-source .venv/bin/activate
+uv run jupyter lab
 ```
 
-With the activated virtual environment, install the required python dependencies:
-
-```commandline
-pip install -r requirements.txt
-```
-
-Doing so will install Jupyter, which can then be started by running the
-following command:
-
-```commandline
-jupyter lab
-```
-
-Jupyter should automatically launch the JupyterLab interface in a web browser
-with this project loaded. Select a notebook from the `notebooks` directory and
-work through it.
+The `uv run jupyter lab` will create a virtual environment with a compatible
+version of python, install all dependencies, then launch JupyterLab. A web
+browser window should automatically be launched with this project loaded.
+Select a notebook from the `notebooks` directory and work through it.
 
 ## Presentation History
 
@@ -180,6 +179,8 @@ here](https://docs.google.com/presentation/d/1qFckA0prY604I4dMkQlF1ZM-QSKS2ou4-Y
 
 | Date | Location | Slides | Notes |
 | ---- | -------- | ------ | ----- |
+| 2025-11-17 | [FOSS4G Auckland, NZ](https://talks.osgeo.org/foss4g-2025/talk/KZGHTZ/) | [Link](https://docs.google.com/presentation/d/1oJ48g9Oc-60MlG2_wFTlAHo42SMYFGeiRG66Pc6cr48) | Full workshop presentation. |
+| 2025-11-03 | [FOSS4G NA Reston, VA, USA](https://talks.osgeo.org/foss4g-na-2025/talk/MN7NCT/) | [Link](https://docs.google.com/presentation/d/1oJ48g9Oc-60MlG2_wFTlAHo42SMYFGeiRG66Pc6cr48) | Full workshop presentation. |
 | 2025-05-01 | CNG Conference | [Link](https://docs.google.com/presentation/d/1nBKAhig0mXkxbzxLRGgu9ygY7Uc028pbdL4qQmlyZ4c/) | Partial presentation (only COG notebook) as part of [a combined workshop on CNG for EO](https://conference.cloudnativegeo.org/CNGConference2025#/workshops?lang=en#CNG%20Workshop:~:text=CNG%20for%20EO%20and%20Deep%20Dive%20into%20Cloud%2DNative%20Geospatial%20Raster%20Formats). |
 | 2025-01-22 | Online (Virtual) | [Link](https://docs.google.com/presentation/d/1k5m2eYV8Tv4YrTAL6pfjmZMhls51cChW_QO1vcXH_0U/) | Partial presentation (only COG notebook) for users in Oceania. |
-| 2024-12-03 | FOSS4G Belém, Brazil | [Link](https://docs.google.com/presentation/d/1qFckA0prY604I4dMkQlF1ZM-QSKS2ou4-YttgGQHzOU/) | Original presentation. |
+| 2024-12-03 | [FOSS4G Belém, Brazil](https://talks.osgeo.org/foss4g-2024-workshop/talk/TNYSY9/) | [Link](https://docs.google.com/presentation/d/1qFckA0prY604I4dMkQlF1ZM-QSKS2ou4-YttgGQHzOU/) | Original presentation. |

@@ -1,14 +1,12 @@
-FROM quay.io/jupyter/base-notebook:python-3.12
+FROM quay.io/jupyter/base-notebook:python-3.13
 
 USER root
 
-RUN apt-get update && \
-    apt-get install -y gcc && \
-    rm -rf /var/cache/apt/archives /var/lib/apt/lists
+RUN pip install uv
 
 USER ${NB_UID}
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY uv.lock pyproject.toml .
+RUN uv sync --locked
 
 CMD start-notebook.py --IdentityProvider.token=''
