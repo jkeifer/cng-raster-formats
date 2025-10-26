@@ -505,7 +505,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "ipynb-scrubber", specifier = ">=0.1.0" }]
+dev = [{ name = "ipynb-scrubber", specifier = ">=0.4.1" }]
 
 [[package]]
 name = "colorama"
@@ -882,11 +882,11 @@ wheels = [
 
 [[package]]
 name = "ipynb-scrubber"
-version = "0.2.0"
+version = "0.4.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c4/b5/dd4948e4283e044e92f9b81bd70f7f3731609f63791354aa2cec9b09ef13/ipynb_scrubber-0.2.0.tar.gz", hash = "sha256:3547ab87b4f231257932c9a2f80eaba7cf6dfe2225a7db3e0bd792b5b408c0a4", size = 33658, upload-time = "2025-08-27T05:54:27.548Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/03/1d/29aac8d5c3397567ec74e41bfe57782ddf526e672b758d6f22e01c252358/ipynb_scrubber-0.4.1.tar.gz", hash = "sha256:ddf3b485b8c4e9fb05b9a931f8a515a9117955c30097bee71ad63c1abc265a5a", size = 42618, upload-time = "2025-10-26T17:03:14.013Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c7/66/2436ff825fde43be6906d00d7a847ec48f0e302f1ea1d2ad0a95d4758202/ipynb_scrubber-0.2.0-py3-none-any.whl", hash = "sha256:c952d3b401c0f03ce3351bd5cd652df13ac01cdf439273a3f641caf5b9fab2f7", size = 12390, upload-time = "2025-08-27T05:54:26.243Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/dd/aae450b82cdd674279f972a8e6e3e0dffb5737f940900adc9287766367bb/ipynb_scrubber-0.4.1-py3-none-any.whl", hash = "sha256:7e94f1c40de96504b62681e10353565adb657984fa96f5b7aae0e59610d157d4", size = 18701, upload-time = "2025-10-26T17:03:12.613Z" },
 ]
 
 [[package]]

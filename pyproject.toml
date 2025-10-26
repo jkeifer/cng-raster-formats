@@ -32,5 +32,23 @@ package = false
 
 [dependency-groups]
 dev = [
-    "ipynb-scrubber>=0.1.0",
+    "ipynb-scrubber>=0.4.1",
 ]
+
+[tool.ipynb-scrubber.options]
+clear-text = ""
+
+[[tool.ipynb-scrubber.files]]
+input = "notebooks/01_completed.ipynb"
+output = "notebooks/01_reading-cogs-the-hard-way.ipynb"
+notes-file = "notes/01_reading-cogs-the-hard-way.md"
+
+[[tool.ipynb-scrubber.files]]
+input = "notebooks/02_completed.ipynb"
+output = "notebooks/02_reading-zarr-the-hard-way.ipynb"
+notes-file = "notes/02_reading-zarr-the-hard-way.md"
+
+[[tool.ipynb-scrubber.files]]
+input = "notebooks/03_completed.ipynb"
+output = "notebooks/03_free-range-artisanal-grass-fed-kerchunk.ipynb"
+notes-file = "notes/03_free-range-artisanal-grass-fed-kerchunk.md"
