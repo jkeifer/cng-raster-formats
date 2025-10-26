@@ -1,3 +1,6 @@
+notebooks/*
+!noteboooks/*.ipynb
+
 # Jupyter
 .local/
 .jupyter/
