@@ -2,9 +2,11 @@
 
 [Slides for the 2025-11 FOSS4G workshops are here.](https://docs.google.com/presentation/d/1oJ48g9Oc-60MlG2_wFTlAHo42SMYFGeiRG66Pc6cr48)
 
-Using the docker execution method is recommended due to the uncertainty
-conference internet quality. But GitHub Codespaces can be a good fallback
-option for those that need a simpler solution.
+Using the
+[docker execution method](#running-locally-with-docker-recommended-for-local-executions)
+is recommended due to the uncertainty conference internet quality. But GitHub
+Codespaces can be a good fallback option for those that need a simpler
+solution.
 
 ## Workshop Overview
 
