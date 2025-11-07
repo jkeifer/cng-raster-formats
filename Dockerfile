@@ -7,6 +7,6 @@ RUN pip install uv
 USER ${NB_UID}
 
 COPY uv.lock pyproject.toml .
-RUN uv sync --locked
+RUN uv export --locked --format requirements.txt | uv pip install -r - --system
 
 CMD start-notebook.py --IdentityProvider.token=''
