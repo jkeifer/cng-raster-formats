@@ -105,35 +105,12 @@ the codespace, then select "Open in JupyterLab". Select a notebook from the
 
 ### Running locally with docker (recommended for local executions)
 
-Using docker has the advantage of constraining the execution environment and
-ensuring the required dependencies are automatically installed.
+Using docker has the advantage of better constraining the execution
+environment, which is also set up automatically with the required dependencies.
 
 Note that the instructions below were written with a MacOS/Linux environment in
 mind. Windows users will likely need to leverage WSL to access a Linux
 environment to run docker.
-
-Ensure the docker daemon or an equivalent is running via whatever mechanism is
-preferred (on Linux via the docker daemon or podman; on MacOS via Docker
-Desktop, colima, podman, OrbStack, or others), then use `docker run` like so:
-
-```commandline
-docker run -p "8888:8888" ghcr.io/jkeifer/cng-raster-formats:latest
-```
-
-This will start up the Jupyter container within docker in the foreground. If
-preferring to run in the background, add the detach option via the `-d` flag.
-
-JupyterLab will be started with no authentication, running on port 8888 (to
-change the port update the first `8888` in the `-p "8888:8888"` port mapping).
-Open a web browser and browse to
-[`http://127.0.0.1:8888`](http://127.0.0.1:8888) to open the JupyterLab
-interface. Select a notebook from the `notebooks` directory and work through
-it.
-
-#### Using docker compose with a repo clone
-
-Instead of running the built image, users can also clone the repo and build it
-themselves. A compose file has been provided to make this process easy.
 
 To begin, clone this repo:
 
@@ -142,15 +119,25 @@ git clone https://github.com/jkeifer/cng-raster-formats.git
 cd cng-raster-formats
 ```
 
-Then run:
+Ensure the docker daemon or an equivalent is running via whatever mechanism is
+preferred (on Linux via the docker daemon or podman; on MacOS via Docker
+Desktop, colima, podman, OrbStack, or others), then use `docker compose` to
+`up` the project:
 
 ```commandline
 docker compose up
 ```
 
-All of the same points and concerns above for running using the prebuilt image
-also apply here. Changing the port is possible using the `JUPYTER_PORT` env var
-prior to starting compose.
+This will start up the Jupyter container within docker in the foreground. If
+preferring to run compose in the background, add the detach option to the
+compose command via the `-d` flag.
+
+JupyterLab will be started with no authentication, running on port 8888 (by
+default; use the env var `JUPYTER_PORT` to change it if that port is already
+taken on your machine). Open a web browser and browse to
+[`http://127.0.0.1:8888`](http://127.0.0.1:8888) to open the JupyterLab
+interface. Select a notebook from the `notebooks` directory and work through
+it.
 
 ### Running locally using `uv`
 

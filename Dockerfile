@@ -12,8 +12,4 @@ RUN rmdir "/home/${NB_USER}/work" && \
     uv export --locked --format requirements.txt \
     | uv pip install -r - --system --no-cache-dir
 
-COPY notebooks/ "/home/${NB_USER}/notebooks"
-COPY notes/ "/home/${NB_USER}/notes"
-COPY README.md "/home/${NB_USER}/"
-
 CMD start-notebook.py --IdentityProvider.token=''
