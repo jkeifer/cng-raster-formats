@@ -1,7 +1,6 @@
 {
 	"name": "Existing Dockerfile",
-	"build": {
-		"context": "..",
-		"dockerfile": "../Dockerfile"
-	}
+    "dockerComposeFile": "../compose.yml",
+    "workspaceFolder": "/home/jovyan",
+    "service": "cng-raster-formats"
 }
