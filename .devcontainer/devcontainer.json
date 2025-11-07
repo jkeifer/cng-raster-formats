@@ -1,8 +1,8 @@
 {
-	"name": "Existing Dockerfile",
+    "name": "Jupyter Dev Container",
     "build": {
-		"context": "..",
-		"dockerfile": "../Dockerfile"
-	},
-    "workspaceFolder": "/home/jovyan"
+        "context": "..",
+        "dockerfile": "../Dockerfile"
+    },
+    "forwardPorts": [8888]
 }
