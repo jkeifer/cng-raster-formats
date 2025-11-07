@@ -93,7 +93,9 @@ dropdown menu, then click the button to add a new codespace from the `main`
 branch.
 
 The codespace will launch in a new browser tab, running the web version of VS
-Code. The notebooks can be opened and executed directly in this interface.
+Code. The notebooks can be opened and executed directly in this interface. The
+notebook kernel will need to be selected to execute code; choose the `.venv`
+kernel from the existing Python Environments option.
 
 Codespaces also have experimental JupyterLab support. For users that might want
 to try this, wait for the codespace to fully initialize. Then, go back to the
