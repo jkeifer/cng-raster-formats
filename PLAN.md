@@ -4,9 +4,9 @@ Status doc for updating the *Exploring Cloud-Native Geospatial Formats* workshop
 (3 notebooks: `01` COG, `02` zarr, `03` kerchunk) for 2026 conferences. Written
 as a handoff so the work can resume on another machine.
 
-**Last updated:** 2026-07-06 (Phase 3 COMPLETE — store published to the `data`
-branch and verified live over raw.githubusercontent.com, including range reads,
-the by-hand decode, and the sparse-chunk 404 behavior; next: Phase 4 nb02
+**Last updated:** 2026-07-06 (Phases 3 AND 4 COMPLETE — store live on the
+`data` branch and verified over raw.githubusercontent.com; nb02 fully
+rewritten against the live store, executes end to end; next: Phase 5 nb03
 rewrite)
 **Working branch:** `jak/2026` (merges to `main`)
 
@@ -283,6 +283,57 @@ for continuity (EPSG:32610).
   store (still viable on conference Wi-Fi, but heavier than the old 30 MB crop;
   revisit before the workshop if that's a concern).
 
+### ✅ Phase 4 — Rewrite nb02 (Reading Zarr the Hard Way, v3) (DONE 2026-07-06)
+`src/02_reading-zarr-the-hard-way.py` fully rewritten against the live store
+(the old Planetary Computer Daymet / zarr v2 notebook is gone). What it covers:
+- **Starts from the known store URL, no STAC search** — with the discovery
+  teaching point up front (zarr solves layout/access, not discovery), and the
+  gap demonstrated live at BOTH levels: the root `zarr.json` declares no
+  children (and guessed keys — `B04` vs `red` — only answer yes/404), and the
+  sparse bands have no chunk manifest. Both halves explicitly set up nb03's
+  kerchunk/Icechunk manifests as "the missing inventory".
+- **v3 structure hands-on over plain HTTP** (stdlib urllib, matching nb01):
+  unified `zarr.json` docs, `c/row/col` chunk keys, `codecs` pipeline,
+  `dimension_names`, plus a v2→v3 "decoder ring" table; multi-band group
+  hierarchy with the 17-band `BANDS` list and native 10/20/60 m grids.
+- **Headline beat:** CRS + geotransform read from the `proj:`/`spatial:`
+  convention attrs on the band group — the old "zarr has no geo extension"
+  lament rewritten as "the conventions exist now", with the explicit contrast
+  to nb01's geo-key/pixel-scale/tie-point tag slog.
+- **Declared vs implied recipe:** codec-by-codec table mapping the `codecs`
+  chain to where the COG hid the same fact (fixedscaleoffset↔GDAL_METADATA,
+  delta↔predictor 2, bytes↔byte-order mark, zstd↔compression tag); the
+  canonical-array-semantics beat (float32 reflectance vs uint16 DNs); scl's
+  plain uint8 delta→zstd chain as the per-array-recipe contrast.
+- **Multiscales used for something real:** level 4 is a single clamped 687²
+  chunk → one-GET whole-scene quicklook, decoded stepwise (zstd magic callback
+  to nb01's magic numbers, flattened-vs-per-row delta note, wrapping cumsum),
+  then displayed on the folium map from `spatial:bbox`.
+- **POI flow identical to nb01:** griffine locate-cell on the UTM grid →
+  (7471, 211) → chunk `red/0/c/7/0`, in-chunk (303, 211) → DN 3736 →
+  reflectance 0.2736 (bit-exact vs the COG, as a Q/A beat), with the
+  key/path-vs-byte-offset addressing beat (the COG's tile index was an
+  inventory; zarr's computed addressing needs none and provides none) and the
+  full-chunk edge-padding note on `read_chunk`'s reshape; chunk/tile 1:1
+  correspondence at level 0 only (COG overviews are 512-px tiles) as a Q/A.
+- **Sparse beat live:** `green/0/zarr.json` metadata identical to red's, chunk
+  GET → 404, then `zarr.open_array` reads the same window as silent fill
+  (−0.1).
+- **"Open it the easy way" payoff:** `zarr.open_array` one-liner reproduces
+  0.2736; then the flip side — `zarr.open_group(...).keys()` returns [] and
+  `xarray.open_zarr` yields zero data variables over plain HTTP (no listing,
+  no child metadata) — the discovery gap catching even the real tooling.
+- **Scrubber coverage:** 16 `#| scrub-note:` cells (nb01 has 13) + 2
+  `<!-- scrub-omit -->` answer cells; `notes/02_*.md` now generates with real
+  content (it was empty before). Verified no answer leaks in the exercise
+  notebook.
+- **Verification:** `jupytext --sync` round-trip stable (byte-identical);
+  `generate_notebooks.py` produces completed + exercise + notes;
+  `uv run jupyter execute` of the completed notebook passes end to end against
+  the LIVE store in ~10 s (all key outputs checked: cell/chunk coords, 0.2736,
+  zstd magic, B04/green 404s, green fill window, empty group listing);
+  `uv run prek run --all-files` passes.
+
 ### ⏳ Deferred (do after Phases 4/5, so deps aren't curated twice)
 - Trim the `workshop` branch's `pyproject.toml` to runtime-only deps; regen its
   `uv.lock`. (Currently it still has the pre-Phase-2 pyproject with dev tooling.)
@@ -294,64 +345,6 @@ for continuity (EPSG:32610).
 ---
 
 ## Remaining phases
-
-### Phase 4 — Rewrite nb02 (Reading Zarr the Hard Way, v3)
-Re-point at the self-hosted v3 store; teach v3 structure:
-- unified `zarr.json` (vs `.zgroup`/`.zarray`/`.zattrs`/`.zmetadata`)
-- `c/0/0` chunk keys (vs `0.0`); `codecs` pipeline (vs `compressor`+`filters`);
-  `dimension_names` (vs `_ARRAY_DIMENSIONS`)
-- **Headline:** two beats. (1) Read the CRS from the store's proj/spatial
-  convention metadata — rewrite the outdated cell-44 lament ("zarr has no geo
-  extension") into "the conventions exist now, here's how to read them".
-  (2) The discovery beat: nb02 starts from a KNOWN store URL because zarr
-  doesn't solve discovery at the catalog level — there is no index of what
-  stores exist or what's in them — and the sparse bands show the same gap at
-  the chunk level: no manifest, so a missing chunk reads as fill_value,
-  silently, no error (`green` looks exactly like `red` in the metadata but
-  has zero chunk files). Both halves explicitly set up nb03's
-  kerchunk/Icechunk manifests, which ARE that missing inventory.
-- The multi-band group structure is part of what nb02 explores: root group →
-  17 band groups (named by eo common_name or asset key) → multiscale levels;
-  the root `zarr.json` doesn't even list its children; bands sit on their
-  native 10/20/60 m grids with per-band-group conventions attrs; scl's plain
-  uint8 `delta`→`zstd` chain contrasts with the reflectance bands'
-  scale-offset chain.
-- Keep the by-hand decode → locate-cell flow with `griffine` on the projected
-  UTM grid (like nb01). The store's `red` group is the FULL scene on the
-  COG's own grid, so the locate-the-POI math gives the SAME pixel coordinates
-  as nb01 on the COG (POI → level-0 pixel (7471, 211) → chunk `red/0/c/7/0`,
-  in-chunk (303, 211), DN 3736 → reflectance 0.2736). The full recipe,
-  straight from the `codecs` metadata: generic zstd decompress (`numcodecs`
-  has a decoder and is already a workshop dep) → `np.frombuffer('<u2')` →
-  undo the delta filter with a wrapping cumsum
-  (`np.cumsum(...).astype('<u2')`; NOTE numcodecs delta differences the
-  *flattened* chunk — it does NOT reset per row like TIFF predictor 2, so
-  it's one cumsum, not one per row) → reshape → apply the scale-offset
-  codec's DN→reflectance (`dn / scale + offset`). Same operations nb01 did by
-  hand on the COG — but here the store declares them. NOTE for the reshape
-  step: a decoded chunk buffer is ALWAYS the full chunk shape from
-  `zarr.json` (1024²), even for the ragged edge chunks (10980 isn't a
-  multiple of 1024) — zarr v3 pads partial chunks with fill_value (−0.1 /
-  DN 0) beyond the array bounds. Optional: sharding stretch.
-- **Make the "this is the nb01 COG in zarr clothing" comparison explicit.** The
-  store's `red` group IS the same data (bit-exact DNs, same grid, same
-  pyramid), so nb02 can diff the two containers directly. Beats to hit:
-  - *Declared vs implied:* the decode recipe lives in the `codecs` chain in
-    `zarr.json`; the COG implies the same recipe through TIFF tags/conventions
-    (predictor, scale/offset, compression: deflate there, zstd here).
-  - *Canonical array semantics:* the COG's array is uint16 DNs with
-    scale/offset as side metadata a reader may or may not apply; the zarr's
-    logical array is float32 reflectance because scaling is a codec. A naive
-    reader gets DNs from one and reflectance from the other.
-  - *Chunk/tile correspondence:* at level 0 zarr chunks map 1:1 onto the COG's
-    1024-px tiles; the overview levels were rechunked (COG overviews use
-    512-px tiles, the store uses uniform 1024² chunks), so boundaries only
-    correspond at full resolution.
-  - *Addressing:* one file + internal byte offsets (the COG — exactly what
-    nb03/kerchunk exploits) vs many files + key/path naming (zarr). Same HTTP
-    range-read access pattern, different "where are the bytes" mechanism —
-    this beat sets up nb03.
-- Source edit lands in `src/02_reading-zarr-the-hard-way.py`.
 
 ### Phase 5 — Rewrite nb03 (Kerchunk → v3 + VirtualiZarr coda)
 - Keep the hand-built reference exercise, but emit **v3-shaped** metadata
