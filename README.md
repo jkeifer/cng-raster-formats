@@ -92,7 +92,29 @@ only writes the notebooks and notes.
 
 The `data` branch is an orphan branch that hosts a self-built Zarr v3 GeoZarr
 store, served to the notebooks over HTTP byte-range requests via
-`raw.githubusercontent.com`. See `scripts/` for the build/stage tooling.
+`raw.githubusercontent.com`. The store is built from the same Sentinel-2 COG
+the notebooks use, by `scripts/build_geozarr.py` — a standalone PEP 723 script
+(its deps are declared inline and resolved by `uv run`; they are deliberately
+not part of the project environment).
+
+Publishing follows the same worktree flow as the `workshop` branch:
+
+```commandline
+# 1. Check out the data branch as a worktree at ./data
+uv run scripts/worktree.py data
+
+# 2. Build the store into the worktree (~200 MB; downloads the full scene)
+uv run scripts/build_geozarr.py --out ./data/S2B_T10TFR_20231223_B04.zarr
+
+# 3. Review, then commit/push from the worktree
+cd data
+git add -A && git commit -m "Rebuild GeoZarr store" && git push
+```
+
+The store is then served per-file at
+`https://raw.githubusercontent.com/<owner>/<repo>/data/<store>.zarr/...`,
+which honors HTTP Range requests, so the notebooks can do byte-range chunk
+reads with no extra infrastructure.
 
 ## Development environment
 

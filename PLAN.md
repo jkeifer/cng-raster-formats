@@ -260,6 +260,24 @@ Re-point at the self-hosted v3 store; teach v3 structure:
   `zarr.json` (1024²), even for the ragged edge chunks (10980 isn't a multiple
   of 1024) — zarr v3 pads partial chunks with fill_value (−0.1 / DN 0) beyond
   the array bounds. Optional: sharding stretch.
+- **Make the "this is the nb01 COG in zarr clothing" comparison explicit.** The
+  store IS the same data (bit-exact DNs, same grid, same pyramid), so nb02 can
+  diff the two containers directly. Beats to hit:
+  - *Declared vs implied:* the decode recipe lives in the `codecs` chain in
+    `zarr.json`; the COG implies the same recipe through TIFF tags/conventions
+    (predictor, scale/offset, compression: deflate there, zstd here).
+  - *Canonical array semantics:* the COG's array is uint16 DNs with
+    scale/offset as side metadata a reader may or may not apply; the zarr's
+    logical array is float32 reflectance because scaling is a codec. A naive
+    reader gets DNs from one and reflectance from the other.
+  - *Chunk/tile correspondence:* at level 0 zarr chunks map 1:1 onto the COG's
+    1024-px tiles; the overview levels were rechunked (COG overviews use
+    512-px tiles, the store uses uniform 1024² chunks), so boundaries only
+    correspond at full resolution.
+  - *Addressing:* one file + internal byte offsets (the COG — exactly what
+    nb03/kerchunk exploits) vs many files + key/path naming (zarr). Same HTTP
+    range-read access pattern, different "where are the bytes" mechanism —
+    this beat sets up nb03.
 - Source edit lands in `src/02_reading-zarr-the-hard-way.py`.
 
 ### Phase 5 — Rewrite nb03 (Kerchunk → v3 + VirtualiZarr coda)
