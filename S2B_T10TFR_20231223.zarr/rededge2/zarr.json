@@ -1,0 +1,92 @@
+{
+  "attributes": {
+    "spatial:dimensions": [
+      "y",
+      "x"
+    ],
+    "spatial:bbox": [
+      600000.0,
+      4990200.0,
+      709800.0,
+      5100000.0
+    ],
+    "spatial:transform_type": "affine",
+    "spatial:transform": [
+      20.0,
+      0.0,
+      600000.0,
+      0.0,
+      -20.0,
+      5100000.0
+    ],
+    "spatial:shape": [
+      5490,
+      5490
+    ],
+    "spatial:registration": "pixel",
+    "proj:code": "EPSG:32610",
+    "zarr_conventions": [
+      {
+        "uuid": "689b58e2-cf7b-45e0-9fff-9cfc0883d6b4",
+        "schema_url": "https://raw.githubusercontent.com/zarr-conventions/spatial/refs/tags/v1/schema.json",
+        "spec_url": "https://github.com/zarr-conventions/spatial/blob/v1/README.md",
+        "name": "spatial:",
+        "description": "Spatial coordinate information"
+      },
+      {
+        "uuid": "f17cb550-5864-4468-aeb7-f3180cfb622f",
+        "schema_url": "https://raw.githubusercontent.com/zarr-experimental/geo-proj/refs/tags/v1/schema.json",
+        "spec_url": "https://github.com/zarr-experimental/geo-proj/blob/v1/README.md",
+        "name": "proj:",
+        "description": "Coordinate reference system information for geospatial data"
+      },
+      {
+        "uuid": "d35379db-88df-4056-af3a-620245f8e347",
+        "schema_url": "https://raw.githubusercontent.com/zarr-conventions/multiscales/refs/tags/v1/schema.json",
+        "spec_url": "https://github.com/zarr-conventions/multiscales/blob/v1/README.md",
+        "name": "multiscales",
+        "description": "Multiscale layout of zarr datasets"
+      }
+    ],
+    "multiscales": {
+      "layout": [
+        {
+          "asset": "0"
+        },
+        {
+          "asset": "1",
+          "derived_from": "0",
+          "transform": {
+            "scale": [
+              2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "asset": "2",
+          "derived_from": "1",
+          "transform": {
+            "scale": [
+              2.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "asset": "3",
+          "derived_from": "2",
+          "transform": {
+            "scale": [
+              2.0,
+              2.0
+            ]
+          }
+        }
+      ],
+      "resampling_method": "average"
+    }
+  },
+  "zarr_format": 3,
+  "node_type": "group"
+}
