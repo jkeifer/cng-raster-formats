@@ -92,8 +92,9 @@ only writes the notebooks and notes.
 
 The `data` branch is an orphan branch that hosts a self-built Zarr v3 GeoZarr
 store, served to the notebooks over HTTP byte-range requests via
-`raw.githubusercontent.com`. The store is built from the same Sentinel-2 COG
-the notebooks use, by `scripts/build_geozarr.py` — a standalone PEP 723 script
+`raw.githubusercontent.com`. The store models the same Sentinel-2 scene the
+notebooks use (all bands from its STAC item; only the red band's chunk data is
+materialized), built by `scripts/build_geozarr.py` — a standalone PEP 723 script
 (its deps are declared inline and resolved by `uv run`; they are deliberately
 not part of the project environment).
 
@@ -104,7 +105,7 @@ Publishing follows the same worktree flow as the `workshop` branch:
 uv run scripts/worktree.py data
 
 # 2. Build the store into the worktree (~200 MB; downloads the full scene)
-uv run scripts/build_geozarr.py --out ./data/S2B_T10TFR_20231223_B04.zarr
+uv run scripts/build_geozarr.py --out ./data/S2B_T10TFR_20231223.zarr
 
 # 3. Review, then commit/push from the worktree
 cd data
