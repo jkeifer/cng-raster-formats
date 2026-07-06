@@ -291,7 +291,7 @@ tiff_attrs = {
             1050825,
             763422,
         ),
-    }
+    },
 }
 
 # %% [markdown]
@@ -341,7 +341,7 @@ tiff_attrs = {
 #   * The total size of the array, which is our TIFF image size in `(row, col)` order.
 # * `zarr_format`
 #   * We're gonna stick with `2` here to be consistent and not have to learn _another_ format for this workshop.
-#  
+#
 # ### How do we define the array chunk references?
 
 # %%
@@ -360,7 +360,7 @@ kerchunking = {
             {
                 'id': 'fixedscaleoffset',
                 'offset': tiff_attrs['offset'],
-                'scale': 1/tiff_attrs['scale'],
+                'scale': 1 / tiff_attrs['scale'],
                 'dtype': tiff_attrs['dtype'],
                 'astype': '<u2',
             },
@@ -379,9 +379,16 @@ kerchunking = {
     },
 }
 
-for tile_row in range(math.ceil(tiff_attrs['size']['rows'] / tiff_attrs['tiles']['size']['rows'])):
-    for tile_col in range(math.ceil(tiff_attrs['size']['cols'] / tiff_attrs['tiles']['size']['cols'])):
-        tile_index = (math.ceil(tiff_attrs['size']['cols'] / tiff_attrs['tiles']['size']['cols']) * tile_row) + tile_col
+for tile_row in range(
+    math.ceil(tiff_attrs['size']['rows'] / tiff_attrs['tiles']['size']['rows'])
+):
+    for tile_col in range(
+        math.ceil(tiff_attrs['size']['cols'] / tiff_attrs['tiles']['size']['cols'])
+    ):
+        tile_index = (
+            math.ceil(tiff_attrs['size']['cols'] / tiff_attrs['tiles']['size']['cols'])
+            * tile_row
+        ) + tile_col
         kerchunking[f'red/{tile_row}.{tile_col}'] = [
             tiff_attrs['href'],
             tiff_attrs['tiles']['offsets'][tile_index],
@@ -406,6 +413,7 @@ print(json.dumps(kerchunking, indent=4))
 # %%
 import aiohttp
 from aiohttp.typedefs import LooseHeaders, StrOrURL
+
 
 class LoggingClientSession(aiohttp.ClientSession):
     def get(self, url: StrOrURL, *args, headers: LooseHeaders | None = None, **kwargs):
@@ -434,7 +442,7 @@ dataset = xarray.open_dataset(
             'remote_protocol': 'https',
             'remote_options': {
                 'get_client': get_client,
-            }
+            },
         },
     },
 )
@@ -455,8 +463,15 @@ dataset.red
 tile_of_interest_row = 7
 tile_of_interest_col = 0
 tile_of_interest = dataset.red[
-    tiff_attrs['tiles']['size']['rows'] * tile_of_interest_row:tiff_attrs['tiles']['size']['rows'] * (tile_of_interest_row + 1),
-    tiff_attrs['tiles']['size']['cols'] * tile_of_interest_col:tiff_attrs['tiles']['size']['cols'] * (tile_of_interest_col + 1)]
+    tiff_attrs['tiles']['size']['rows'] * tile_of_interest_row : tiff_attrs['tiles'][
+        'size'
+    ]['rows']
+    * (tile_of_interest_row + 1),
+    tiff_attrs['tiles']['size']['cols'] * tile_of_interest_col : tiff_attrs['tiles'][
+        'size'
+    ]['cols']
+    * (tile_of_interest_col + 1),
+]
 tile_of_interest
 
 # %% [markdown]
@@ -483,8 +498,15 @@ tile_of_interest.values
 tile_of_interest_row = 7
 tile_of_interest_col = 0
 two_tiles = dataset.red[
-    tiff_attrs['tiles']['size']['rows'] * tile_of_interest_row:tiff_attrs['tiles']['size']['rows'] * (tile_of_interest_row + 1),
-    tiff_attrs['tiles']['size']['cols'] * tile_of_interest_col:tiff_attrs['tiles']['size']['cols'] * (tile_of_interest_col + 2)]
+    tiff_attrs['tiles']['size']['rows'] * tile_of_interest_row : tiff_attrs['tiles'][
+        'size'
+    ]['rows']
+    * (tile_of_interest_row + 1),
+    tiff_attrs['tiles']['size']['cols'] * tile_of_interest_col : tiff_attrs['tiles'][
+        'size'
+    ]['cols']
+    * (tile_of_interest_col + 2),
+]
 two_tiles
 
 # %%
@@ -499,8 +521,15 @@ two_tiles.values
 tile_of_interest_row = 7
 tile_of_interest_col = 0
 two_tiles_discontinuous = dataset.red[
-    tiff_attrs['tiles']['size']['rows'] * tile_of_interest_row:tiff_attrs['tiles']['size']['rows'] * (tile_of_interest_row + 2),
-    tiff_attrs['tiles']['size']['cols'] * tile_of_interest_col:tiff_attrs['tiles']['size']['cols'] * (tile_of_interest_col + 1)]
+    tiff_attrs['tiles']['size']['rows'] * tile_of_interest_row : tiff_attrs['tiles'][
+        'size'
+    ]['rows']
+    * (tile_of_interest_row + 2),
+    tiff_attrs['tiles']['size']['cols'] * tile_of_interest_col : tiff_attrs['tiles'][
+        'size'
+    ]['cols']
+    * (tile_of_interest_col + 1),
+]
 two_tiles_discontinuous.values
 
 # %% [markdown]

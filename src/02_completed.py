@@ -41,7 +41,7 @@ point_map
 
 # %%
 catalog = pystac_client.Client.open(
-    "https://planetarycomputer.microsoft.com/api/stac/v1",
+    'https://planetarycomputer.microsoft.com/api/stac/v1',
     modifier=planetary_computer.sign_inplace,
 )
 collection = catalog.get_collection('daymet-daily-pr')
@@ -55,7 +55,7 @@ collection
 # All the paths we're interested in will be under the root of the zarr we are interested in. That path is provided within the `zarr-abfs` asset's href.
 
 # %%
-asset = collection.assets["zarr-abfs"]
+asset = collection.assets['zarr-abfs']
 asset
 
 # %%
@@ -80,7 +80,7 @@ fs.ls(str(zarr_root))
 # %%
 # and we can read a file
 with fs.open(str(zarr_root / '.zattrs')) as f:
-   content = f.read()
+    content = f.read()
 
 content
 
@@ -90,17 +90,21 @@ content
 #
 # Even with fsspec, browsing and reading files has a bit more boiler plate than we might like. We can easily create some simple functions to make an easier API for the types of operations we need to do to explore our zarr.
 
+
 # %%
 # let's make some convenience functions to make browsing easier
 def ls_zarr(path: str) -> list[str]:
     return fs.ls(str(zarr_root / path))
 
+
 def read_zarr_file(path: str) -> bytes:
     with fs.open(str(zarr_root / path)) as f:
         return f.read()
 
+
 def read_zarr_json(path: str) -> dict[str, Any]:
     return json.loads(read_zarr_file(path))
+
 
 def print_json(_json: dict[str, Any]) -> None:
     print(json.dumps(_json, indent=4))
@@ -180,8 +184,9 @@ print(len(lat_bytes))
 # %%
 import numcodecs.blosc
 
+
 def read_zarr_blosc(path: str) -> Any:
-    #with lz4.frame.LZ4FrameDecompressor() as decompressor:
+    # with lz4.frame.LZ4FrameDecompressor() as decompressor:
     return numcodecs.blosc.decompress(read_zarr_file(path))
 
 
@@ -218,7 +223,9 @@ lat_array
 # %%
 lon_zarray = read_zarr_json('lon/.zarray')
 dt = np.dtype(lon_zarray['dtype'])
-lon_array = np.frombuffer(read_zarr_blosc('lon/0.0'), dtype=dt).reshape(lon_zarray['chunks'])
+lon_array = np.frombuffer(read_zarr_blosc('lon/0.0'), dtype=dt).reshape(
+    lon_zarray['chunks']
+)
 lon_array
 
 # %% [markdown]
@@ -267,7 +274,9 @@ y_array.shape
 collection.extra_fields['cube:dimensions']['x']['reference_system']
 
 # %%
-POI_proj = POI.to_crs(collection.extra_fields['cube:dimensions']['x']['reference_system'])
+POI_proj = POI.to_crs(
+    collection.extra_fields['cube:dimensions']['x']['reference_system']
+)
 print(f'x={POI_proj.geom.x}, y={POI_proj.geom.y}')
 
 # %% [markdown]
@@ -357,12 +366,14 @@ time_zarray = read_zarr_json('time/.zarray')
 print_json(time_zarray)
 
 # %%
-suspected_year_chunk = 2020-1980
+suspected_year_chunk = 2020 - 1980
 suspected_year_chunk
 
 # %%
 dt = np.dtype(time_zarray['dtype'])
-time_array = np.frombuffer(read_zarr_blosc(f'time/{suspected_year_chunk}'), dtype=dt).reshape(time_zarray['chunks'])
+time_array = np.frombuffer(
+    read_zarr_blosc(f'time/{suspected_year_chunk}'), dtype=dt
+).reshape(time_zarray['chunks'])
 time_array
 
 # %% [markdown]
@@ -370,7 +381,9 @@ time_array
 
 # %%
 # to confirm the dates match up
-chunk_start_date = datetime.date.fromisoformat('19800101') + datetime.timedelta(days=int(time_array[0]))
+chunk_start_date = datetime.date.fromisoformat('19800101') + datetime.timedelta(
+    days=int(time_array[0])
+)
 print(chunk_start_date)
 
 # %% [markdown]
@@ -381,7 +394,9 @@ print(chunk_start_date)
 
 # %%
 dt = np.dtype(tmax_zarray['dtype'])
-tmax_array = np.frombuffer(read_zarr_blosc(f'tmax/{suspected_year_chunk}.0.0'), dtype=dt).reshape(tmax_zarray['chunks'])
+tmax_array = np.frombuffer(
+    read_zarr_blosc(f'tmax/{suspected_year_chunk}.0.0'), dtype=dt
+).reshape(tmax_zarray['chunks'])
 tmax_array.shape
 
 # %% [markdown]
@@ -409,7 +424,9 @@ POI_tmax_mean_array
 # %%
 POI_tmax_min = np.min(POI_tmax_mean_array)
 POI_tmax_min_index = np.argmin(POI_tmax_mean_array)
-print(f'The lowest tmax temp {POI_tmax_min} occurred in week {POI_tmax_min_index} of 2020.')
+print(
+    f'The lowest tmax temp {POI_tmax_min} occurred in week {POI_tmax_min_index} of 2020.'
+)
 
 # %% [markdown]
 # This is a great result! But it would be good if we could turn that into an actual date. Good thing we read in that `time` array: we can use slice it on weekly bounds to get the date of the first day of the week in question.
@@ -419,5 +436,9 @@ week__days_since_1980 = int(time_array[::7][POI_tmax_min_index])
 week__days_since_1980
 
 # %%
-best_week_of_the_year_start = datetime.date.fromisoformat('19800101') + datetime.timedelta(days=week__days_since_1980)
-print(f'The best day to arrive in Puerto Rico, from our data, was {best_week_of_the_year_start}. Now go book your time machine tickets. 😁')
+best_week_of_the_year_start = datetime.date.fromisoformat(
+    '19800101'
+) + datetime.timedelta(days=week__days_since_1980)
+print(
+    f'The best day to arrive in Puerto Rico, from our data, was {best_week_of_the_year_start}. Now go book your time machine tickets. 😁'
+)
