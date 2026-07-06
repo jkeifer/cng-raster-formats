@@ -1,0 +1,19 @@
+# Hooks are managed with prek (https://github.com/j178/prek), installed via the
+# uv dev dependency group along with the tools the hooks run:
+#
+#   uv sync                     # install prek, ruff, etc.
+#   uv run prek install         # install the git hooks
+#   uv run prek run --all-files # run all hooks manually
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix --force-exclude
+        language: system
+        types_or: [python]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format --force-exclude
+        language: system
+        types_or: [python]

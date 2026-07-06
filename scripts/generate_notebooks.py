@@ -108,7 +108,8 @@ def generate(output_dir: Path) -> None:
         for entry in config.get('files', []):
             if 'notes-file' in entry:
                 (output_dir / entry['notes-file']).parent.mkdir(
-                    parents=True, exist_ok=True,
+                    parents=True,
+                    exist_ok=True,
                 )
         subprocess.run(
             ['ipynb-scrubber', 'scrub-project', '--config-file', str(config_path)],

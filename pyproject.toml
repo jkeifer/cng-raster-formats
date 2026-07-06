@@ -36,7 +36,17 @@ package = false
 dev = [
     "ipynb-scrubber>=0.4.1",
     "jupytext>=1.19.4",
+    "prek>=0.4.8",
+    "ruff>=0.15.20",
 ]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint.per-file-ignores]
+# The notebook sources deliberately import modules mid-file, where the
+# narrative introduces them.
+"src/*_completed.py" = ["E402"]
 
 [tool.ipynb-scrubber.options]
 clear-text = ""

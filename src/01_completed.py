@@ -61,15 +61,15 @@ ENDIANNESS = {
 # %%
 def binary(_bytes: bytes, join_str: str = ' ') -> None:
     _hex = _bytes.hex()
-    return join_str.join([
-        '{:08b}'.format(int(_hex[i:i+2], 16))
-        for i in range(0, len(_hex), 2)
-    ])
+    return join_str.join(
+        ['{:08b}'.format(int(_hex[i : i + 2], 16)) for i in range(0, len(_hex), 2)]
+    )
+
 
 def url_read_bytes(url: str, start: int, end: int) -> bytes:
     request = urllib.request.Request(
         url,
-        headers={'Range': f'bytes={start}-{end-1}'},
+        headers={'Range': f'bytes={start}-{end - 1}'},
     )
     with urllib.request.urlopen(request) as response:
         return response.read()
@@ -96,7 +96,7 @@ point_map
 # **WARNING**: You _can_ change this to fetch scenes from a different collection, STAC API, or not use STAC and just put in an href directly to a COG of your choosing. Doing so is discouraged while in the workshop, as differences in the way the file was created might be impossible to overcome within the time limits of this workshop. Consider leaving this as-is to start, and at a later date, when you have more familiarity parsing TIFFs, you can try a different source.
 
 # %%
-client = Client.open("https://earth-search.aws.element84.com/v1")
+client = Client.open('https://earth-search.aws.element84.com/v1')
 
 search = client.search(
     max_items=1,
@@ -104,7 +104,7 @@ search = client.search(
     intersects=POI,
     datetime='2023/2023',
     query=['eo:cloud_cover<10'],
-    sortby=[{"direction": "desc", "field": "properties.datetime"}],
+    sortby=[{'direction': 'desc', 'field': 'properties.datetime'}],
 )
 item = next(search.items())
 print(json.dumps(item.to_dict(), indent=4))
@@ -184,8 +184,12 @@ print(binary(header))
 # *Naively, the above example might make it seem silly to use little endian notation--big endian seems much more natural, given the way we generally have been taught to read and write numbers. However, when it comes to how most microprocessors and memory operations actually work, little endian has some clear benefits which has generally led to its dominance outside networking. More of the nuance and complication of endianness is well documented on [its wikipedia page](https://en.wikipedia.org/wiki/Endianness).
 
 # %%
-endianness = ENDIANNESS[header[0:2]]  # We'll need this later, so let's save it into a var now
-print(f"Endianness signature: {header[0:2]}; struct endianness format char: '{endianness}'")
+endianness = ENDIANNESS[
+    header[0:2]
+]  # We'll need this later, so let's save it into a var now
+print(
+    f"Endianness signature: {header[0:2]}; struct endianness format char: '{endianness}'"
+)
 
 # %% [markdown]
 # To reiterate this point about endianness: we care about endianness so we can ensure we can interpret the bytes in each word in the file in the appropriate order. Beyond that we aren't going to need to worry about endianness.
@@ -298,7 +302,9 @@ print(ifd_offset)
 # %%
 #| scrub-note: cell4
 tags_start = ifd_offset + 2
-tags_count = struct.unpack(f'{endianness}H', url_read_bytes(href, ifd_offset, tags_start))[0]
+tags_count = struct.unpack(
+    f'{endianness}H', url_read_bytes(href, ifd_offset, tags_start)
+)[0]
 tags_count
 
 # %% [markdown]
@@ -317,7 +323,9 @@ print(binary(tags_bytes))
 
 # %%
 #| scrub-note: cell6
-next_ifd_offset = struct.unpack(f'{endianness}I', url_read_bytes(href, tags_end, tags_end + 4))[0]
+next_ifd_offset = struct.unpack(
+    f'{endianness}I', url_read_bytes(href, tags_end, tags_end + 4)
+)[0]
 next_ifd_offset
 
 # %% [markdown]
@@ -328,7 +336,7 @@ next_ifd_offset
 # %%
 #| scrub-note: cell7
 for i in range(0, len(tags_bytes), tag_size):
-    tb = tags_bytes[i:i+tag_size]
+    tb = tags_bytes[i : i + tag_size]
     print(tb)
     print(binary(tb))
 
@@ -383,13 +391,15 @@ tags
 # %%
 #| scrub-note: cell8
 # image column count (width)
-cols = struct.unpack(endianness + 'H', tags[256]['value'][0:struct.calcsize('H')])[0]
+cols = struct.unpack(endianness + 'H', tags[256]['value'][0 : struct.calcsize('H')])[0]
 
 # image row count (height)
 # we can also resolve the struct char in a more automated fashion
 tag = tags[257]
 struct_dtype = DATA_TYPES[tag['data_type']]
-rows = struct.unpack(endianness + struct_dtype, tags[257]['value'][0:struct.calcsize(struct_dtype)])[0]
+rows = struct.unpack(
+    endianness + struct_dtype, tags[257]['value'][0 : struct.calcsize(struct_dtype)]
+)[0]
 
 print(f'Image size is {cols} x {rows}')
 
@@ -408,11 +418,11 @@ tag = tags[324]
 struct_dtype = DATA_TYPES[tag['data_type']]
 size = tag['count'] * struct.calcsize(struct_dtype)
 offset = struct.unpack(f'{endianness}I', tag['value'])[0]
-values = url_read_bytes(href, offset, offset+size)
+values = url_read_bytes(href, offset, offset + size)
 tile_offsets = struct.unpack(endianness + (struct_dtype * tag['count']), values)
 
 for idx, tile_offset in enumerate(tile_offsets):
-    print(f"Offset tile {idx}: {tile_offset}")
+    print(f'Offset tile {idx}: {tile_offset}')
 
 
 # %% [markdown]
@@ -463,13 +473,16 @@ for idx, tile_offset in enumerate(tile_offsets):
 #
 # We have a lot of tags to unpack. For the sake of time, here's a function that we can use to make unpacking all the tags easier.
 
+
 # %%
 class TagDict(TypedDict):
     data_type: int
     count: int
     value: bytes
 
-type TagsDict = dict[int: TagDict]
+
+type TagsDict = dict[int:TagDict]
+
 
 def unpack_tag(tag: TagsDict, endianness: Literal['>', '<']) -> Any:
     struct_dtype = DATA_TYPES[tag['data_type']]
@@ -479,8 +492,8 @@ def unpack_tag(tag: TagsDict, endianness: Literal['>', '<']) -> Any:
     offset = None
     if size > len(value):
         offset = struct.unpack(endianness + 'I', value)[0]
-        value = url_read_bytes(href, offset, offset+size)
-        
+        value = url_read_bytes(href, offset, offset + size)
+
     unpacked = struct.unpack(endianness + (struct_dtype * tag['count']), value[:size])
 
     # if data_type == 2 (ASCII) we want to join the chars together
@@ -631,28 +644,29 @@ transform = Affine(
 #
 # We can use the above explanation to write a general-purpose function to extract the keys into a dict, like we originally did with the IFD tags, and then we can use it to extract our keys. Refer to the [GeoTIFF document "Geocoding Raster Data"](http://geotiff.maptools.org/spec/geotiff2.7.html#2.7) for and explanantion of the key IDs and how to understand their meanings. These keys are critical for finding the CRS of the file via the information presented in that documentation.
 
+
 # %%
 def extract_geo_keys(
     key_directory: tuple[int, ...],
     double_params: tuple[float, ...],
     ascii_params: bytes,
-)-> dict[int, int | float | bytes]:
+) -> dict[int, int | float | bytes]:
     keys: dict[int, int | float | bytes] = {}
 
     try:
         _, _, _, key_count = key_directory[0:4]
         for key_index in range(key_count):
             offset = (4 * key_index) + 4
-            key_id, location, count, value_offset = key_directory[offset:offset + 4]
+            key_id, location, count, value_offset = key_directory[offset : offset + 4]
 
             if location == 0:
                 keys[key_id] = value_offset
             elif location == 34735:
-                keys[key_id] = key_directory[value_offset:value_offset + count]
+                keys[key_id] = key_directory[value_offset : value_offset + count]
             elif location == 34736:
-                keys[key_id] = double_params[value_offset:value_offset + count]
+                keys[key_id] = double_params[value_offset : value_offset + count]
             elif location == 34737:
-                keys[key_id] = ascii_params[value_offset: value_offset + (count - 1)]
+                keys[key_id] = ascii_params[value_offset : value_offset + (count - 1)]
             else:
                 raise ValueError(f'Unknown location: {location}')
     except Exception as e:
@@ -698,7 +712,7 @@ nodata_value
 # First, we need to find the point coordinates of our POI in the same reference system as the image. We can use the `to_crs` method on our POI with our image's CRS as parsed from the geo keys above.
 
 # %%
-image_crs = f"EPSG:{geo_keys[3072]}"
+image_crs = f'EPSG:{geo_keys[3072]}'
 POI_proj = POI.to_crs(image_crs)
 print(f'x={POI_proj.geom.x}, y={POI_proj.geom.y}')
 
@@ -740,7 +754,9 @@ print(f'tile_row={tile.row}, tile_col={tile.col}')
 tile_index = tile_grid.linear_index(tile)
 tile_offset = tile_offsets[tile_index]
 tile_byte_length = tile_byte_counts[tile_index]
-print(f'tile ({tile.row}, {tile.col}) has index {tile_index} and is at offset {tile_offset} with length {tile_byte_length}')
+print(
+    f'tile ({tile.row}, {tile.col}) has index {tile_index} and is at offset {tile_offset} with length {tile_byte_length}'
+)
 
 # %% [markdown]
 # ### Actually reading the tile
@@ -754,6 +770,7 @@ tile_bytes = url_read_bytes(href, tile_offset, tile_offset + tile_byte_length)
 # Per our `compression` tag we know we the data is compressed using `DEFLATE`,
 # which can be extracted using the stdlib `zlib` module.
 import zlib
+
 tile_extracted = zlib.decompress(tile_bytes, 0)
 
 # %%
@@ -764,10 +781,11 @@ tile_extracted = zlib.decompress(tile_bytes, 0)
 struct_dtype = 'H'
 tile_array = np.array(
     struct.unpack(
-        endianness + (struct_dtype * (len(tile_extracted) // struct.calcsize(struct_dtype))),
+        endianness
+        + (struct_dtype * (len(tile_extracted) // struct.calcsize(struct_dtype))),
         tile_extracted,
     ),
-    dtype=np.uint16
+    dtype=np.uint16,
 ).reshape(tile_width, tile_length)
 tile_array
 
@@ -814,8 +832,12 @@ tile_array_scaled_offset
 # We just need the tile's min and max latitude and longitude (in EPSG:4326 coordinates) so we can tell Folium it's bounding box (roughly), then we can (re-)make our map and add our layers. We can use our `tile` object to compute those coordinates in our image CRS then convert them to EPSG:4326.
 
 # %%
-tile_origin_x, tile_origin_y  = point(*tile.origin.coords[0], crs=image_crs).to_crs(EPSG_4326).coords[0]
-tile_antiorigin_x, tile_antiorigin_y  = point(*tile.antiorigin.coords[0], crs=image_crs).to_crs(EPSG_4326).coords[0]
+tile_origin_x, tile_origin_y = (
+    point(*tile.origin.coords[0], crs=image_crs).to_crs(EPSG_4326).coords[0]
+)
+tile_antiorigin_x, tile_antiorigin_y = (
+    point(*tile.antiorigin.coords[0], crs=image_crs).to_crs(EPSG_4326).coords[0]
+)
 
 # we make a whole new map because if we screwed
 # something up we only have to re-run this cell to fix it
@@ -854,6 +876,7 @@ raster_map
 #
 # Turns out this is a fun problem and I wanted to code up a solution. Here's my attempt; what might yours look like?
 
+
 # %%
 class Endianness(bytes, enum.Enum):
     BIG_ENDIAN = b'MM'
@@ -882,8 +905,8 @@ class TIFFBytes:
                 f'Cannot chunk data exactly into {chunk_size}: length {len(self)}',
             )
         yield from (
-            self[chunk_index * chunk_size:(chunk_index * chunk_size) + chunk_size]
-            for chunk_index in range(len(self)//chunk_size)
+            self[chunk_index * chunk_size : (chunk_index * chunk_size) + chunk_size]
+            for chunk_index in range(len(self) // chunk_size)
         )
 
     def __len__(self: Self) -> int:
@@ -912,7 +935,9 @@ class Tag:
         tag_bytes: TIFFBytes,
     ) -> Self:
         code, data_type, count = tag_bytes[:8].unpack('HHI')
-        offset, raw, unpacked = cls.unpack_tag_value(tiff, data_type, count, tag_bytes[8:])
+        offset, raw, unpacked = cls.unpack_tag_value(
+            tiff, data_type, count, tag_bytes[8:]
+        )
         return cls(
             code=code,
             data_type=data_type,
@@ -923,14 +948,16 @@ class Tag:
         )
 
     @staticmethod
-    def unpack_tag_value(tiff: TIFFMeta, data_type: int, count: int, value: TIFFBytes) -> tuple[int | None, bytes, Any]:
+    def unpack_tag_value(
+        tiff: TIFFMeta, data_type: int, count: int, value: TIFFBytes
+    ) -> tuple[int | None, bytes, Any]:
         struct_dtype = DATA_TYPES[data_type]
         size = count * struct.calcsize(struct_dtype)
 
         offset = None
         if size > len(value):
             offset = value.unpack('I')[0]
-            value = tiff.read_bytes(offset, offset+size)
+            value = tiff.read_bytes(offset, offset + size)
 
         unpacked = value[:size].unpack(str(count) + struct_dtype)
 
@@ -949,7 +976,9 @@ class Tags(dict[int, Tag]):
 
     @classmethod
     def from_tiff_bytes(cls: type[Self], tiff: TIFFMeta, tags_bytes: TIFFBytes) -> Self:
-        return cls.from_tags([Tag.from_bytes(tiff, tag_bytes) for tag_bytes in tags_bytes.chunk(12)])
+        return cls.from_tags(
+            [Tag.from_bytes(tiff, tag_bytes) for tag_bytes in tags_bytes.chunk(12)]
+        )
 
 
 @dataclasses.dataclass
@@ -965,7 +994,7 @@ class IFD:
         tags_end = tags_start + (tags_count * tag_size)
         tags_bytes = tiff.read_bytes(tags_start, tags_end)
         next_offset = tiff.read_bytes(tags_end, tags_end + 4).unpack('I')[0]
-        
+
         return cls(
             offset=offset,
             tags=Tags.from_tiff_bytes(tiff, tags_bytes),
@@ -975,15 +1004,16 @@ class IFD:
 
 @dataclasses.dataclass
 class TIFFMeta:
-    '''Class to help parse TIFF IFDs. Only supports standard TIFFs, not BigTIFF.'''
+    """Class to help parse TIFF IFDs. Only supports standard TIFFs, not BigTIFF."""
+
     href: str
     endianness: Endianness
     ifds: list[IFD]
-    
+
     # We can track the max byte read to parse out IFD stuff.
     # This could be an interesting data point to learn how to better optimize reads.
     max_ifd_byte: int = 0
-    
+
     def __init__(self: Self, href: str) -> None:
         self.href = href
 
@@ -993,11 +1023,11 @@ class TIFFMeta:
         self.endianness = Endianness(__bytes[0:2])
 
         _bytes = TIFFBytes(data=__bytes, endianness=self.endianness)
-        
+
         magic_number = _bytes[2:4].unpack('H')[0]
         if magic_number != 42:
-            raise TypeError(f"Unsupported file type: magic number {magic_number} != 42")
-        
+            raise TypeError(f'Unsupported file type: magic number {magic_number} != 42')
+
         self.ifds: list[IFD] = []
         ifd_offset = _bytes[4:8].unpack('I')[0]
         while ifd_offset:

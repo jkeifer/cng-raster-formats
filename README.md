@@ -97,3 +97,7 @@ uv sync
 
 installs everything, including the dev tooling (Jupytext, ipynb-scrubber). Run
 Jupyter with `uv run jupyter lab`.
+
+After syncing, install the git hooks with `uv run prek install`. The hooks run
+ruff lint and format, with the tools coming from the dev dependency group; run
+them manually with `uv run prek run --all-files`.
