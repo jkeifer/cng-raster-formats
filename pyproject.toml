@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "aiohttp>=3.13.1",
     "folium>=0.20.0",
     "fsspec>=2025.9.0",
     "griffine>=0.1.0",
@@ -16,6 +17,8 @@ dependencies = [
     "kerchunk>=0.2.9",
     "numcodecs>=0.16.3",
     "numpy>=2.3.4",
+    "obspec-utils>=0.9.0",
+    "obstore>=0.11.0",
     "odc-geo>=0.4.10",
     "planetary-computer[adlfs]>=1.0.0",
     "pyproj>=3.7.2",

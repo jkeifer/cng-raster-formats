@@ -465,6 +465,7 @@ name = "cng-raster-formats"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "aiohttp" },
     { name = "folium" },
     { name = "fsspec" },
     { name = "griffine" },
@@ -473,6 +474,8 @@ dependencies = [
     { name = "kerchunk" },
     { name = "numcodecs" },
     { name = "numpy" },
+    { name = "obspec-utils" },
+    { name = "obstore" },
     { name = "odc-geo" },
     { name = "planetary-computer", extra = ["adlfs"] },
     { name = "pyproj" },
@@ -493,6 +496,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", specifier = ">=3.13.1" },
     { name = "folium", specifier = ">=0.20.0" },
     { name = "fsspec", specifier = ">=2025.9.0" },
     { name = "griffine", specifier = ">=0.1.0" },
@@ -501,6 +505,8 @@ requires-dist = [
     { name = "kerchunk", specifier = ">=0.2.9" },
     { name = "numcodecs", specifier = ">=0.16.3" },
     { name = "numpy", specifier = ">=2.3.4" },
+    { name = "obspec-utils", specifier = ">=0.9.0" },
+    { name = "obstore", specifier = ">=0.11.0" },
     { name = "odc-geo", specifier = ">=0.4.10" },
     { name = "planetary-computer", extras = ["adlfs"], specifier = ">=1.0.0" },
     { name = "pyproj", specifier = ">=3.7.2" },
