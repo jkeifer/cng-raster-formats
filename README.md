@@ -27,29 +27,34 @@ worktree of the target branch and committed there.
 The source of truth for each notebook is a
 [Jupytext](https://jupytext.readthedocs.io/) `py:percent` file under `src/`:
 
-* `src/NN_completed.py` — the full, working notebook, as readable Python with
-  `# %%` cell markers (clean diffs, no JSON noise, no cell outputs).
+* `src/NN_<name>.py` — the full, working notebook, as readable Python with
+  `# %%` cell markers (clean diffs, no JSON noise, no cell outputs). Each file
+  is named for its exercise (e.g. `src/01_reading-cogs-the-hard-way.py`).
 
 From each `src/` file we generate:
 
-* `NN_completed.ipynb` — the completed notebook (Jupytext render of the `.py`).
-* `NN_<name>.ipynb` — the **exercise** notebook handed to attendees, produced by
+* `notebooks/completed/NN_<name>.ipynb` — the completed notebook (Jupytext
+  render of the `.py`). Keeping the completed renders under
+  `notebooks/completed/` avoids colliding with the exercise notebooks and, on
+  the `workshop` branch, gives a tidy "answers live here" separation.
+* `notebooks/NN_<name>.ipynb` — the **exercise** notebook handed to attendees,
+  produced by
   [`ipynb-scrubber`](https://pypi.org/project/ipynb-scrubber/), which clears
   designated cells and omits answer cells.
 * `notes/NN_<name>.md` — notes extracted from cells tagged for note-taking.
 
 Both generation steps are configured by `[tool.ipynb-scrubber]` in
 `pyproject.toml` (input/output paths, tags) and `jupytext.toml` (the `src/` ↔
-`notebooks/` pairing).
+`notebooks/completed/` pairing).
 
 ### Editing
 
-Edit `src/NN_completed.py` directly, or edit a notebook in Jupyter and sync it
-back to the `.py`:
+Edit `src/NN_<name>.py` directly, or edit a completed notebook in Jupyter and
+sync it back to the `.py`:
 
 ```commandline
 # after editing a notebook in Jupyter, sync it back to src/:
-uv run jupytext --sync src/*_completed.py
+uv run jupytext --sync src/*.py
 ```
 
 ## Building & publishing
@@ -112,5 +117,5 @@ notebooks use, so no credentials are needed). The local equivalents:
 ```commandline
 uv run prek run --all-files
 uv run scripts/generate_notebooks.py
-uv run jupyter execute notebooks/NN_completed.ipynb   # for each of 01, 02, 03
+uv run jupyter execute notebooks/completed/NN_<name>.ipynb   # for each of 01, 02, 03
 ```

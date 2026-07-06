@@ -35,8 +35,8 @@ jobs:
       - name: Generate notebooks
         run: uv run scripts/generate_notebooks.py
       - name: Execute notebook 01
-        run: uv run jupyter execute notebooks/01_completed.ipynb
+        run: uv run jupyter execute notebooks/completed/01_reading-cogs-the-hard-way.ipynb
       - name: Execute notebook 02
-        run: uv run jupyter execute notebooks/02_completed.ipynb
+        run: uv run jupyter execute notebooks/completed/02_reading-zarr-the-hard-way.ipynb
       - name: Execute notebook 03
-        run: uv run jupyter execute notebooks/03_completed.ipynb
+        run: uv run jupyter execute notebooks/completed/03_free-range-artisanal-grass-fed-kerchunk.ipynb

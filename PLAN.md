@@ -38,9 +38,11 @@ are kept off `main`.
 | `workshop` | Runnable notebooks + participant README, LICENSE, notes, run env  | Participants  |
 | `data`     | Orphan branch hosting the self-built GeoZarr v3 store (byte-range) | (data host)  |
 
-- **Source of truth:** `src/NN_completed.py` (Jupytext `py:percent`).
-- **Generated (never committed on `main`):** `notebooks/NN_completed.ipynb`
-  (Jupytext render), `notebooks/NN_<name>.ipynb` (exercise, via ipynb-scrubber),
+- **Source of truth:** `src/NN_<name>.py` (Jupytext `py:percent`), named for
+  its exercise (e.g. `src/01_reading-cogs-the-hard-way.py`).
+- **Generated (never committed on `main`):**
+  `notebooks/completed/NN_<name>.ipynb` (Jupytext render),
+  `notebooks/NN_<name>.ipynb` (exercise, via ipynb-scrubber),
   `notes/NN_<name>.md`. All gitignored on `main`.
 - **`workshop` maintains its OWN runtime-only `pyproject.toml` + lock, README,
   LICENSE, Dockerfile, compose, .devcontainer.** The stage step writes ONLY
@@ -66,7 +68,7 @@ cd workshop && git add -A && git commit -m "..." && git push  # you review + com
 ```
 
 Config lives in `pyproject.toml` (`[tool.ipynb-scrubber]`) and `jupytext.toml`
-(the `src/` ↔ `notebooks/` pairing).
+(the `src/` ↔ `notebooks/completed/` pairing).
 
 ---
 
@@ -78,8 +80,13 @@ Config lives in `pyproject.toml` (`[tool.ipynb-scrubber]`) and `jupytext.toml`
 - Spellcheck pass on markdown (unit16→uint16, many typos).
 
 ### ✅ Phase 2 — Tooling, hygiene, delivery model (COMMITTED, pushed: `51e6ee8`)
-- **`src/` layout + Jupytext:** `src/*_completed.py` are the source of truth;
-  `jupytext.toml` pairs `src/` ↔ `notebooks/`. Verified byte-clean round-trip.
+- **`src/` layout + Jupytext:** `src/*.py` are the source of truth;
+  `jupytext.toml` pairs `src/` ↔ `notebooks/completed/`. Verified byte-clean
+  round-trip.
+- **Rename (post-2.5):** sources renamed for their exercises
+  (`src/NN_completed.py` → `src/NN_<name>.py`); completed renders now land in
+  `notebooks/completed/`, avoiding filename collisions with the exercise
+  notebooks.
 - **Deps:** deleted committed `requirements.txt` (+ README pip section); added
   `virtualizarr` + `icechunk` (zarr → 3.2.1). Dockerfile unaffected (exports
   from lock at build).
@@ -158,14 +165,15 @@ Re-point at the self-hosted v3 store; teach v3 structure:
   catalog-level counterpart.
 - Keep the by-hand decompress → `np.frombuffer` → reshape → locate-cell flow with
   `griffine` on the projected UTM grid (like nb01). Optional: sharding stretch.
-- Source edit lands in `src/02_completed.py`.
+- Source edit lands in `src/02_reading-zarr-the-hard-way.py`.
 
 ### Phase 5 — Rewrite nb03 (Kerchunk → v3 + VirtualiZarr coda)
 - Keep the hand-built reference exercise, but emit **v3-shaped** metadata
   (`zarr.json`, `codecs`, `dimension_names`, `c/` keys) matching nb02.
 - Add a coda re-opening the same refs via **VirtualiZarr**, and writing to
   **Icechunk** as the modern preferred store. Refresh the `LoggingClientSession`
-  byte-range demo. Source edit in `src/03_completed.py`.
+  byte-range demo. Source edit in
+  `src/03_free-range-artisanal-grass-fed-kerchunk.py`.
 
 ### Phase 6 — Finalize workshop branch + docs
 - Do the deferred `workshop` pyproject trim + participant README refresh (incl.

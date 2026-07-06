@@ -3,9 +3,10 @@
 
 The py:percent files in src/ are the source of truth. This script:
 
-  1. Renders each src/NN_completed.py to a completed .ipynb via Jupytext.
+  1. Renders each src/NN_<name>.py to a completed .ipynb under
+     notebooks/completed/ via Jupytext.
   2. Runs ipynb-scrubber over each completed notebook to produce the exercise
-     notebook + notes file.
+     notebook (notebooks/NN_<name>.ipynb) + notes file (notes/NN_<name>.md).
 
 Both steps write into --output-dir, which is the directory that *contains* the
 `notebooks/` and `notes/` subdirectories. It defaults to the repo root (`.`), so
@@ -49,13 +50,17 @@ def _toml_escape(value: str) -> str:
 
 
 def _render_completed(input_ipynb: Path, output_dir: Path) -> Path:
-    """Render src/<stem>.py -> <output_dir>/notebooks/<stem>.ipynb via Jupytext."""
-    stem = input_ipynb.stem  # e.g. "01_completed"
+    """Render src/<stem>.py -> <output_dir>/<input path> via Jupytext.
+
+    The scrubber input paths (e.g. notebooks/completed/01_<name>.ipynb) share
+    their stem with the src/ file they are rendered from.
+    """
+    stem = input_ipynb.stem  # e.g. "01_reading-cogs-the-hard-way"
     src_py = SRC_DIR / f'{stem}.py'
     if not src_py.exists():
         raise SystemExit(f'error: missing source file {src_py}')
 
-    dest = output_dir / 'notebooks' / f'{stem}.ipynb'
+    dest = output_dir / input_ipynb
     dest.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         ['jupytext', '--to', 'ipynb', '--output', str(dest), str(src_py)],
@@ -76,8 +81,7 @@ def _write_temp_config(config: dict, output_dir: Path, tmp_dir: Path) -> Path:
         lines.append('')
 
     for entry in config.get('files', []):
-        stem = Path(entry['input']).stem
-        completed = output_dir / 'notebooks' / f'{stem}.ipynb'
+        completed = output_dir / entry['input']
         out = output_dir / entry['output']
         lines.append('[[files]]')
         lines.append(f'input = "{_toml_escape(str(completed))}"')

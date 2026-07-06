@@ -46,22 +46,22 @@ quote-style = "single"
 [tool.ruff.lint.per-file-ignores]
 # The notebook sources deliberately import modules mid-file, where the
 # narrative introduces them.
-"src/*_completed.py" = ["E402"]
+"src/*.py" = ["E402"]
 
 [tool.ipynb-scrubber.options]
 clear-text = ""
 
 [[tool.ipynb-scrubber.files]]
-input = "notebooks/01_completed.ipynb"
+input = "notebooks/completed/01_reading-cogs-the-hard-way.ipynb"
 output = "notebooks/01_reading-cogs-the-hard-way.ipynb"
 notes-file = "notes/01_reading-cogs-the-hard-way.md"
 
 [[tool.ipynb-scrubber.files]]
-input = "notebooks/02_completed.ipynb"
+input = "notebooks/completed/02_reading-zarr-the-hard-way.ipynb"
 output = "notebooks/02_reading-zarr-the-hard-way.ipynb"
 notes-file = "notes/02_reading-zarr-the-hard-way.md"
 
 [[tool.ipynb-scrubber.files]]
-input = "notebooks/03_completed.ipynb"
+input = "notebooks/completed/03_free-range-artisanal-grass-fed-kerchunk.ipynb"
 output = "notebooks/03_free-range-artisanal-grass-fed-kerchunk.ipynb"
 notes-file = "notes/03_free-range-artisanal-grass-fed-kerchunk.md"
