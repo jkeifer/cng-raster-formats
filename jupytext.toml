@@ -1,21 +1,23 @@
 # Jupytext configuration.
 #
-# The py:percent files in src/ are the source of truth. They sync out to the
-# completed notebooks in notebooks/ (which are, in turn, scrubbed into the
-# exercise notebooks). The .py files give clean, reviewable diffs in version
-# control; everything under notebooks/ is generated.
+# The py:percent files in src/ are the source of truth, named for their
+# exercises (e.g. src/01_reading-cogs-the-hard-way.py). They sync out to the
+# completed notebooks in notebooks/completed/ (which are, in turn, scrubbed
+# into the exercise notebooks in notebooks/). The .py files give clean,
+# reviewable diffs in version control; everything under notebooks/ is
+# generated.
 #
 # Workflow:
-#   1. Edit src/NN_completed.py (or the notebook in Jupyter).
-#   2. `uv run jupytext --sync src/*_completed.py` to sync the pair.
+#   1. Edit src/NN_<name>.py (or the notebook in Jupyter).
+#   2. `uv run jupytext --sync src/*.py` to sync the pair.
 #   3. `uv run ipynb-scrubber scrub-project` to regenerate the exercise
 #      notebooks + notes from the completed notebooks.
 #
-# Only the *_completed notebooks are paired; the generated exercise notebooks
-# are build artifacts of the scrubber.
+# Only the completed notebooks (notebooks/completed/) are paired; the
+# generated exercise notebooks are build artifacts of the scrubber.
 
-# Pair .py source files in src/ with completed notebooks in notebooks/.
-formats = "src///py:percent,notebooks///ipynb"
+# Pair .py source files in src/ with completed notebooks in notebooks/completed/.
+formats = "src///py:percent,notebooks/completed///ipynb"
 
 # Keep outputs out of the .py (they live only in the .ipynb).
 notebook_metadata_filter = "-all"
