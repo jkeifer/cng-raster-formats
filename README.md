@@ -101,3 +101,16 @@ Jupyter with `uv run jupyter lab`.
 After syncing, install the git hooks with `uv run prek install`. The hooks run
 ruff lint and format, with the tools coming from the dev dependency group; run
 them manually with `uv run prek run --all-files`.
+
+## Checks / CI
+
+CI (`.github/workflows/ci.yml`) runs on pull requests and on pushes to `main`.
+It runs the prek hooks, then generates all notebooks from `src/` and executes
+each completed notebook end to end (this hits the public data services the
+notebooks use, so no credentials are needed). The local equivalents:
+
+```commandline
+uv run prek run --all-files
+uv run scripts/generate_notebooks.py
+uv run jupyter execute notebooks/NN_completed.ipynb   # for each of 01, 02, 03
+```

@@ -94,6 +94,20 @@ Config lives in `pyproject.toml` (`[tool.ipynb-scrubber]`) and `jupytext.toml`
 - **CI:** back IN scope — but as ordinary tests, not a cron canary. See
   Phase 2.5 below.
 
+### ✅ Phase 2.5 — Pre-commit hooks + CI
+CI came back in scope after all — as ordinary tests, not a cron canary.
+Runnable locally, on PRs, and on pushes to `main`. Both parts done:
+- **prek-managed pre-commit hooks** (`.pre-commit-config.yaml`) —
+  system-language local hooks running ruff check/format via `uv run`, with prek
+  + ruff in the uv dev dependency group. `uv run prek run --all-files` passes.
+- **GitHub Actions workflow** (`.github/workflows/ci.yml`) — `lint` job runs
+  the same prek hooks; `notebooks` job generates all notebooks from `src/` and
+  executes each completed notebook (`uv run jupyter execute ...`), one step per
+  notebook, 30-min job timeout, concurrency-cancels superseded runs. Verified
+  locally: all three notebooks executed cleanly (01 ~13s, 02 ~82s, 03 ~7s; one
+  transient S3 connection reset on a first 01 attempt — the notebooks do real
+  network I/O, so occasional flakes are possible).
+
 ### ⏳ Deferred (do after Phases 4/5, so deps aren't curated twice)
 - Trim the `workshop` branch's `pyproject.toml` to runtime-only deps; regen its
   `uv.lock`. (Currently it still has the pre-Phase-2 pyproject with dev tooling.)
@@ -104,15 +118,6 @@ Config lives in `pyproject.toml` (`[tool.ipynb-scrubber]`) and `jupytext.toml`
 ---
 
 ## Remaining phases
-
-### 🚧 Phase 2.5 — Pre-commit hooks + CI  (IN PROGRESS)
-CI is back in scope after all — as ordinary tests, not a cron canary. Runnable
-locally, on PRs, and on pushes to `main`. Two parts:
-- **prek-managed pre-commit hooks** — system-language local hooks whose tools
-  (ruff etc.) come from the uv dev dependency group — to enforce
-  formatting/linting.
-- **GitHub Actions workflow** that runs the same prek hooks AND generates all
-  notebooks from `src/` and executes them end to end.
 
 ### Phase 3 — Build & publish the v3 GeoZarr store  (NEXT)
 Build our own Zarr **v3** GeoZarr store because no public geospatial v3 store
