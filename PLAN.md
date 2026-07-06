@@ -4,9 +4,10 @@ Status doc for updating the *Exploring Cloud-Native Geospatial Formats* workshop
 (3 notebooks: `01` COG, `02` zarr, `03` kerchunk) for 2026 conferences. Written
 as a handoff so the work can resume on another machine.
 
-**Last updated:** 2026-07-06 (Phase 3 build half done; store restructured as a
-sparse multi-band scene modeled from its STAC item — only red materialized;
-STAC-item-as-deliverable dropped from the publish half)
+**Last updated:** 2026-07-06 (Phase 3 COMPLETE — store published to the `data`
+branch and verified live over raw.githubusercontent.com, including range reads,
+the by-hand decode, and the sparse-chunk 404 behavior; next: Phase 4 nb02
+rewrite)
 **Working branch:** `jak/2026` (merges to `main`)
 
 ---
@@ -117,18 +118,7 @@ Runnable locally, on PRs, and on pushes to `main`. Both parts done:
   transient S3 connection reset on a first 01 attempt — the notebooks do real
   network I/O, so occasional flakes are possible).
 
-### ⏳ Deferred (do after Phases 4/5, so deps aren't curated twice)
-- Trim the `workshop` branch's `pyproject.toml` to runtime-only deps; regen its
-  `uv.lock`. (Currently it still has the pre-Phase-2 pyproject with dev tooling.)
-- Fix the stale participant README on the `workshop` branch (still has the
-  removed pip section, old presentation dates).
-- First real `workshop` / `data` branch publish commits.
-
----
-
-## Remaining phases
-
-### 🚧 Phase 3 — Build & publish the v3 GeoZarr store  (build half DONE)
+### ✅ Phase 3 — Build & publish the v3 GeoZarr store (DONE: built + live on `data`)
 Build our own Zarr **v3** GeoZarr store because no public geospatial v3 store
 exists yet (verified: PC Daymet, EOPF Sentinel, NASA POWER are all still v2, and
 none embed CRS in the store). Build from the SAME Sentinel-2 scene as nb01/nb03
@@ -252,27 +242,58 @@ for continuity (EPSG:32610).
   can't encode float reflectance to uint16 DNs without a second `cast_value`
   codec whose `cast-value-rs` backend every reader would need; hence
   FixedScaleOffset.
-- Store currently staged outside the repo (not committed); rebuild anywhere
-  with `uv run scripts/build_geozarr.py --out <path>`.
+- Rebuild the store anywhere with `uv run scripts/build_geozarr.py --out
+  <path>`.
 
-#### ⏳ Publish (remaining)
-- Publish to the **`data` orphan branch** via `worktree.py data` +
-  `build_geozarr.py --out ./data/<store>.zarr`, then review + commit + push.
-  Served at `raw.githubusercontent.com/<owner>/<repo>/data/<store>.zarr/...`
-  (raw honors HTTP Range → 206; verified).
+#### ✅ Publish (done 2026-07-06)
+- Published to the **`data` orphan branch** (store at the branch root). Live
+  base URL:
+  `https://raw.githubusercontent.com/jkeifer/cng-raster-formats/data/S2B_T10TFR_20231223.zarr`
 - The publish is JUST the store — the previously planned STAC item catalog
-  record is dropped. nb02 starts from a known store URL, and that's the
+  record was dropped. nb02 starts from the known store URL, and that's the
   teaching point: zarr doesn't solve data discovery — you still need an
   external index of what stores exist and what's in them. (The STAC item is
   still used at BUILD time as the metadata source for the sparse bands; it
   just isn't a published deliverable.)
+- **Verified live over plain HTTP (2026-07-06):**
+  - `GET zarr.json` and `red/0/zarr.json` → 200; contents identical to the
+    local build.
+  - `Range: bytes=0-3` on `red/0/c/7/0` → **206 Partial Content**, body is the
+    zstd magic `28 b5 2f fd`, `Content-Range: bytes 0-3/1548961`.
+  - Full by-hand decode from the live URL (fetch `red/0/c/7/0` → numcodecs
+    zstd decode → `frombuffer('<u2')` → wrapping cumsum over the flat buffer →
+    reshape 1024² → scale/offset): in-chunk (303, 211) = DN 3736 →
+    reflectance 0.2736 — matches nb01's read of the same POI pixel from the
+    COG.
+  - Metadata-only band chunk `green/0/c/0/0` → **404 Not Found** (plain-text
+    body `404: Not Found`). This is the sparse-store beat over HTTP: chunk
+    absence = 404, which zarr treats as fill_value — silently, no error, and
+    nothing in the metadata distinguishes it from a transient miss. nb02
+    teaches this.
+  - Headers of note: `Accept-Ranges: bytes` on every response; `Content-Type:
+    text/plain; charset=utf-8` for `zarr.json` files vs
+    `application/octet-stream` for chunk files; `Cache-Control: max-age=300`
+    + ETag, served via Fastly (`X-Cache` header) — the 5-minute CDN cache
+    should help absorb workshop-room bursts.
 - **Risk — raw.githubusercontent.com at workshop scale:** ~20–30 participants,
   typically NAT'd behind one or a few conference-room IPs, all issuing bursts of
   unauthenticated range requests. Probably fine via the CDN, but have a
   fallback: a jsDelivr mirror of the `data` branch (per-file, so unaffected by
-  total store size), or "download it locally" — now ~201 MB for the whole-scene
+  total store size), or "download it locally" — ~201 MB for the whole-scene
   store (still viable on conference Wi-Fi, but heavier than the old 30 MB crop;
-  revisit at publish time if that's a concern).
+  revisit before the workshop if that's a concern).
+
+### ⏳ Deferred (do after Phases 4/5, so deps aren't curated twice)
+- Trim the `workshop` branch's `pyproject.toml` to runtime-only deps; regen its
+  `uv.lock`. (Currently it still has the pre-Phase-2 pyproject with dev tooling.)
+- Fix the stale participant README on the `workshop` branch (still has the
+  removed pip section, old presentation dates).
+- First real `workshop` branch publish commit (`data` was published in
+  Phase 3).
+
+---
+
+## Remaining phases
 
 ### Phase 4 — Rewrite nb02 (Reading Zarr the Hard Way, v3)
 Re-point at the self-hosted v3 store; teach v3 structure:
