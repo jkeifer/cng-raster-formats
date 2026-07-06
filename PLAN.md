@@ -4,8 +4,9 @@ Status doc for updating the *Exploring Cloud-Native Geospatial Formats* workshop
 (3 notebooks: `01` COG, `02` zarr, `03` kerchunk) for 2026 conferences. Written
 as a handoff so the work can resume on another machine.
 
-**Last updated:** 2026-07-06 (Phase 3 build half done; build script rewritten
-as a whole-scene converter — pyramid from the COG's own overviews)
+**Last updated:** 2026-07-06 (Phase 3 build half done; store restructured as a
+sparse multi-band scene modeled from its STAC item — only red materialized;
+STAC-item-as-deliverable dropped from the publish half)
 **Working branch:** `jak/2026` (merges to `main`)
 
 ---
@@ -138,76 +139,111 @@ for continuity (EPSG:32610).
   (`# /// script` with `geozarr-toolkit>=0.1.2`, `async-geotiff>=0.5.1`,
   `obstore>=0.11.0`, `zarr>=3.1.3`), run via `uv run scripts/build_geozarr.py
   [--out PATH] [--overwrite]`; deps stay out of the workshop env. Default
-  `--out` is scene-derived: `./S2B_T10TFR_20231223_B04.zarr`.
-- **Pure whole-scene COG→GeoZarr converter** (supersedes the earlier POI-crop
-  design — no POI, no cropping, no local resampling): everything about the
-  store is driven by the source COG's own metadata/structure, and a full-scene
-  store makes nb02's locate-the-POI-pixel math line up exactly with nb01's
-  work on the full COG (same grid, same pixel coordinates — locating the POI
-  is notebook work, not build-script work). Reads the same B04 COG nb03
-  hardcodes via `async-geotiff` + obstore `HTTPStore` (range reads only).
-- **Pyramid = the COG's own overview IFDs**, read via `GeoTIFF.overviews`
-  (async-geotiff 0.5.x exposes each overview as an `Overview` with full
-  `.read()`, `.transform`, `.shape`, tile sizes — no local-downsample fallback
-  needed). This COG: base 10980×10980 @ 10 m (1024 px tiles) + 4 overviews —
-  5490² @ 20 m, 2745² @ 40 m, 1373² @ ~79.97 m, 687² @ ~159.83 m, all 512 px
-  tiles, deflate. Overviews are copied pixel-for-pixel; per-level transforms/
-  shapes come from the IFDs. GDAL ceil-halves overview dims, so the coarsest
-  two levels are 2× only nominally, and their non-integer pixel sizes preserve
-  the exact full-scene extent (every level's bbox is identical).
-  `multiscales.resampling_method='average'` is the *producer's* resampling
-  (Element 84's standard S2 COG pipeline), not ours.
-- Store: v3, **uniform 1024×1024 chunks on every level** = the COG's full-res
-  tile size (square tiles asserted). The overview IFDs use 512 px tiles, but
-  one uniform chunk size is a simpler story for nb02 and means fewer chunk
-  files; each level's chunk grid is declared in its own `zarr.json` anyway.
-  The coarsest level (687²) is smaller than one chunk, so its chunk is clamped
-  to the array shape. Codec pipeline
+  `--out` is scene-scoped: `./S2B_T10TFR_20231223.zarr`.
+- **Sparse multi-band scene store, modeled from the scene's STAC item**
+  (supersedes the single-band B04 store, which superseded the POI-crop
+  design): the store models the ENTIRE scene — every single-band raster asset
+  in the Earth Search item (17 bands: the spectral bands plus scl/aot/wvp and
+  the cloud/snow masks; multi-band visual/preview, thumbnail, and metadata
+  docs skipped) — but materializes chunk DATA only for red (the B04 COG nb01
+  and nb03 use, still read in full via `async-geotiff` + obstore range
+  reads). The script fetches the item from Earth Search at build time (stdlib
+  urllib; collection + item id derived from the COG URL) and takes ALL
+  other-band metadata from it — per-asset `proj:shape`/`proj:transform`,
+  `raster:bands` (data_type/nodata/scale/offset), `eo:bands` (common_name) —
+  the other bands' COGs are never opened. Rationale: a fuller, more realistic
+  GeoZarr structure for nb02 to explore, and the sparse bands are a
+  deliberate teaching beat — zarr metadata cannot tell you which chunks exist
+  (missing chunk = reads as fill_value, silently, no error, no manifest),
+  the chunk-level version of "zarr doesn't solve discovery", setting up
+  nb03's kerchunk/Icechunk manifests.
+- **Structure:** root group → one child group per band → multiscale arrays
+  `0..N`. Band groups named by `eo` common_name (B04 → `red`, B02 → `blue`);
+  assets with no common_name (scl/aot/wvp/cloud/snow) or an ambiguous one
+  (rededge1/2/3 all share `rededge`) use their asset key. Bands sit on their
+  native grids (10 m: 10980², 20 m: 5490², 60 m: 1830² — per the item), all
+  sharing the exact full-scene bbox. proj:/spatial:/multiscales convention
+  attrs live on each BAND group and `validate_group` runs per band group (it
+  only checks the attrs of the group it is handed — no recursion into
+  children); the root group carries NO attrs at all (a v3 root `zarr.json`
+  doesn't even list its children — nb02's first taste of the discovery gap).
+- **Pyramids:** red's is the COG's own overview IFDs, read via
+  `GeoTIFF.overviews` and copied pixel-for-pixel — base 10980² @ 10 m
+  (1024 px tiles) + 4 overviews: 5490² @ 20 m, 2745² @ 40 m, 1373² @
+  ~79.97 m, 687² @ ~159.83 m. The metadata-only bands' level structures are
+  SYNTHESIZED with the same deterministic rule the real pyramid follows —
+  GDAL-style ceil-halving of dims until a level fits within one 1024² chunk,
+  pixel sizes rescaled to preserve the exact full-scene extent — and the
+  build asserts the rule reproduces red's ACTUAL pyramid (shapes exactly,
+  transforms to 1e-9) before trusting it for anyone else. Those pyramids are
+  the store's own design, not read from the other COGs: 20 m bands get 4
+  levels (5490→2745→1373→687), 60 m bands 2 (1830→915).
+  `multiscales.resampling_method` is `average` for the continuous bands (for
+  red that's the *producer's* resampling — Element 84's standard S2 COG
+  pipeline) and `nearest` for the uint8 class/mask bands (our claim;
+  averaging class codes would be meaningless).
+- Store: v3, **uniform 1024×1024 chunks on every level of every band** = the
+  red COG's full-res tile size (square tiles asserted); levels smaller than
+  one chunk get their chunk clamped to the array shape. Codecs per band:
+  bands with a declared scale/offset in `raster:bands` (reflectance bands
+  scale 1e-4/offset −0.1; aot/wvp scale 1e-3/offset 0) get
   `numcodecs.fixedscaleoffset`→`numcodecs.delta`→`bytes`→`zstd` (level 13,
-  plain zstd NOT blosc), `dimension_names=['y','x']`, no sharding. Rationale
-  (supersedes the earlier "plain zstd only" pipeline): nb01 decodes a COG tile
-  by hand — inflate, reverse TIFF predictor 2, apply the DN→reflectance
-  scale/offset from the TIFF tags — and the store declares that SAME recipe as
-  explicit v3 codec metadata, so nb02 can say "same operations as the COG, but
-  here the store *tells you* the recipe". Logical dtype is float32 reflectance;
-  the scale-offset codec (offset −0.1, scale 10000, derived from the COG's
-  `scales`/`offsets`) encodes to the COG's uint16 DNs **bit-exactly** (asserted
-  per level at build time), then delta differences the DNs, then zstd. No CF
-  `scale_factor`/`add_offset` attrs — scaling lives in the codec chain, and CF
-  attrs on top would make xarray apply it twice. fill_value −0.1 (float32) =
-  the reflectance of the COG's nodata DN 0, so missing chunks and nodata
-  pixels read identically.
-- **Ragged edges:** 10980 % 1024 = 740, so the level-0/1/2 chunk grids have
-  partial edge chunks. Zarr v3 stores those as FULL-size chunk buffers padded
-  with fill_value — verified by hand: edge chunk `0/c/10/10` decodes to a full
-  1024² buffer whose out-of-bounds region is all DN 0 / reflectance −0.1.
-- Stats: 5 levels (base + 4 COG overviews), **171 chunk files, 201.4 MB
-  total, largest chunk 1.57 MB** — every file far under the GitHub 100 MB/file
-  limit. Build ≈ 1¾ min (downloads the full ~240 MB scene via range reads).
+  plain zstd NOT blosc), `dimension_names=['y','x']`, no sharding — same
+  rationale as before: nb01 decodes a COG tile by hand (inflate, reverse TIFF
+  predictor 2, apply DN→reflectance from the TIFF tags) and the store
+  declares that SAME recipe as explicit v3 codec metadata. Logical dtype
+  float32; the scale-offset codec encodes to the source uint16 DNs
+  **bit-exactly** (asserted per level for red at build time), then delta,
+  then zstd; fill_value = the physical value of the band's nodata DN (−0.1
+  reflectance; 0.0 for aot/wvp), so missing chunks and nodata pixels read
+  identically. Unscaled uint8 bands (scl classification, cloud/snow masks)
+  have no physical transform to declare, so no scaling codec: logical uint8,
+  `delta`→`bytes`→`zstd`, fill = nodata code 0. No CF
+  `scale_factor`/`add_offset` attrs anywhere — scaling lives in the codec
+  chain, and CF attrs on top would make xarray apply it twice. The build also
+  cross-checks the item's scale/offset/nodata for red against the COG's own
+  TIFF tags (the one band where both are visible — they agree).
+- **Ragged edges:** 10980 % 1024 = 740, so the 10 m level-0/1/2 chunk grids
+  have partial edge chunks. Zarr v3 stores those as FULL-size chunk buffers
+  padded with fill_value — verified by hand: edge chunk `red/0/c/10/10`
+  decodes to a full 1024² buffer whose out-of-bounds region is all DN 0 /
+  reflectance −0.1.
+- Stats: 17 band groups (1 materialized + 16 metadata-only), red = 5 levels
+  (base + 4 COG overviews), **171 chunk files — ALL under `red/`
+  (121/36/9/4/1 per level) — 201.5 MB total, largest chunk 1.57 MB**; 86
+  `zarr.json` files ≈ 186 kB of metadata. Every file far under the GitHub
+  100 MB/file limit. Build ≈ 1¾ min (downloads the full ~240 MB red scene via
+  range reads; the STAC item fetch is one small GET).
 - `geozarr-toolkit` 0.1.2 API worked as advertised — no hand-written fallback
   needed: `create_geozarr_attrs()` (spatial: + proj: attrs + zarr_conventions),
   `create_multiscales_layout()`, `create_zarr_conventions(...)` with the
   `*ConventionMetadata` classes, `validate_group()` (run by the script after
-  writing). Gotchas: `create_multiscales_layout` returns `{'multiscales': ...}`
-  to merge into group attrs, and its `zarr_conventions` must be set separately;
-  `proj:code` validation resolves the CRS via pyproj (pulled in by
-  async-geotiff anyway).
+  writing, once per band group). Gotchas: `create_multiscales_layout` returns
+  `{'multiscales': ...}` to merge into group attrs, and its `zarr_conventions`
+  must be set separately; `proj:code` validation resolves the CRS via pyproj
+  (pulled in by async-geotiff anyway); `validate_group` does NOT recurse into
+  child groups/arrays — it validates only the attrs of the group it is given,
+  hence the per-band-group gate.
 - Verified against the built store: raw `zarr.json`s (v3, codecs chain in
-  order with the right configs, dims, chunk grid, proj/spatial/multiscales
-  attrs w/ EPSG:32610 + per-level transforms/bboxes covering the FULL scene —
-  origin (600000, 5100000) UTM 10N, bbox [600000, 4990200, 709800, 5100000] on
-  every level, no leftover CF scaling attrs); v3 `c/row/col` chunk keys on
-  disk, plain files only (no consolidated metadata); xarray round-trip
-  (per-level open works via `drop_variables` on the other levels, values are
-  reflectance applied exactly once, full-scene mean ≈ 0.0505; opening ALL
-  levels from the root at once conflicts since levels share dim names —
-  expected multiscales behavior, and nb02 reads by hand anyway); full by-hand
-  chunk decode (raw file starts with the zstd magic `28 b5 2f fd`; generic
-  zstd decompress → `<u2` → wrapping cumsum → reshape → scale/offset) matches
-  the zarr read exactly for POI, interior, and edge chunks; DNs round-trip
-  bit-exactly vs fresh COG reads of the base image AND of overviews 0 and 3
-  (POI DN 3736 → reflectance 0.2736 at level-0 full-image pixel (7471, 211) —
-  same pixel coords as nb01 on the COG — chunk `0/c/7/0` in-chunk (303, 211)).
+  order with the right configs per band — scaled float32 vs plain uint8 —
+  dims, chunk grid, proj/spatial/multiscales attrs w/ EPSG:32610 on every
+  band group and array; per-level transforms at native 10/20/60 m resolutions
+  and bbox [600000, 4990200, 709800, 5100000] identical on every level of
+  every band, no leftover CF scaling attrs; empty root attrs); v3 `c/row/col`
+  chunk keys on disk, plain files only (no consolidated metadata), chunk
+  files ONLY under `red/` — every other band is arrays + attrs with zero
+  chunks; **sparse reads behave as designed in the workshop env:** zarr opens
+  `green/0` fine and returns fill (−0.1) everywhere with no error, `scl/0`
+  reads back uint8 fill 0 through its delta-only chain — nothing in the
+  metadata distinguishes a sparse band from a full one; xarray round-trip
+  (per-level open works via `drop_variables` on the sibling levels, values
+  are reflectance applied exactly once, full-scene red mean ≈ 0.0505); full
+  by-hand chunk decode (raw file starts with the zstd magic `28 b5 2f fd`;
+  generic zstd decompress → `<u2` → wrapping cumsum → reshape →
+  scale/offset) matches the zarr read exactly; red DNs round-trip bit-exactly
+  vs fresh COG reads of the base image and overview level 3 (POI DN 3736 →
+  reflectance 0.2736 at level-0 full-image pixel (7471, 211) — same pixel
+  coords as nb01 on the COG — chunk `red/0/c/7/0` in-chunk (303, 211)).
 - Codec import gotchas: the v3 wrappers are re-exported at `zarr.codecs`
   (`Delta`, `FixedScaleOffset` — same classes as `zarr.codecs.numcodecs` /
   `numcodecs.zarr3`), serialized as `numcodecs.delta` /
@@ -219,14 +255,17 @@ for continuity (EPSG:32610).
 - Store currently staged outside the repo (not committed); rebuild anywhere
   with `uv run scripts/build_geozarr.py --out <path>`.
 
-#### ⏳ Publish + STAC item (remaining)
+#### ⏳ Publish (remaining)
 - Publish to the **`data` orphan branch** via `worktree.py data` +
   `build_geozarr.py --out ./data/<store>.zarr`, then review + commit + push.
   Served at `raw.githubusercontent.com/<owner>/<repo>/data/<store>.zarr/...`
   (raw honors HTTP Range → 206; verified).
-- STAC item using modern **proj + raster** extensions, asset href → the
-  `data`-branch raw URL. Reference guide:
-  https://developmentseed.org/geozarr-examples/examples/cog-to-zarr/
+- The publish is JUST the store — the previously planned STAC item catalog
+  record is dropped. nb02 starts from a known store URL, and that's the
+  teaching point: zarr doesn't solve data discovery — you still need an
+  external index of what stores exist and what's in them. (The STAC item is
+  still used at BUILD time as the metadata source for the sparse bands; it
+  just isn't a published deliverable.)
 - **Risk — raw.githubusercontent.com at workshop scale:** ~20–30 participants,
   typically NAT'd behind one or a few conference-room IPs, all issuing bursts of
   unauthenticated range requests. Probably fine via the CDN, but have a
@@ -240,29 +279,42 @@ Re-point at the self-hosted v3 store; teach v3 structure:
 - unified `zarr.json` (vs `.zgroup`/`.zarray`/`.zattrs`/`.zmetadata`)
 - `c/0/0` chunk keys (vs `0.0`); `codecs` pipeline (vs `compressor`+`filters`);
   `dimension_names` (vs `_ARRAY_DIMENSIONS`)
-- **Headline:** read the CRS from the store's proj/spatial convention metadata —
-  rewrite the outdated cell-44 lament ("zarr has no geo extension") into "the
-  conventions exist now, here's how to read them"; show STAC proj as the
-  catalog-level counterpart.
+- **Headline:** two beats. (1) Read the CRS from the store's proj/spatial
+  convention metadata — rewrite the outdated cell-44 lament ("zarr has no geo
+  extension") into "the conventions exist now, here's how to read them".
+  (2) The discovery beat: nb02 starts from a KNOWN store URL because zarr
+  doesn't solve discovery at the catalog level — there is no index of what
+  stores exist or what's in them — and the sparse bands show the same gap at
+  the chunk level: no manifest, so a missing chunk reads as fill_value,
+  silently, no error (`green` looks exactly like `red` in the metadata but
+  has zero chunk files). Both halves explicitly set up nb03's
+  kerchunk/Icechunk manifests, which ARE that missing inventory.
+- The multi-band group structure is part of what nb02 explores: root group →
+  17 band groups (named by eo common_name or asset key) → multiscale levels;
+  the root `zarr.json` doesn't even list its children; bands sit on their
+  native 10/20/60 m grids with per-band-group conventions attrs; scl's plain
+  uint8 `delta`→`zstd` chain contrasts with the reflectance bands'
+  scale-offset chain.
 - Keep the by-hand decode → locate-cell flow with `griffine` on the projected
-  UTM grid (like nb01). The store is the FULL scene on the COG's own grid, so
-  the locate-the-POI math gives the SAME pixel coordinates as nb01 on the COG
-  (POI → level-0 pixel (7471, 211) → chunk `c/7/0`, in-chunk (303, 211), DN
-  3736 → reflectance 0.2736). The full recipe, straight from the `codecs`
-  metadata: generic zstd decompress (`numcodecs` has a decoder and is already
-  a workshop dep) → `np.frombuffer('<u2')` → undo the delta filter with a
-  wrapping cumsum (`np.cumsum(...).astype('<u2')`; NOTE numcodecs delta
-  differences the *flattened* chunk — it does NOT reset per row like TIFF
-  predictor 2, so it's one cumsum, not one per row) → reshape → apply the
-  scale-offset codec's DN→reflectance (`dn / scale + offset`). Same operations
-  nb01 did by hand on the COG — but here the store declares them. NOTE for the
-  reshape step: a decoded chunk buffer is ALWAYS the full chunk shape from
-  `zarr.json` (1024²), even for the ragged edge chunks (10980 isn't a multiple
-  of 1024) — zarr v3 pads partial chunks with fill_value (−0.1 / DN 0) beyond
-  the array bounds. Optional: sharding stretch.
+  UTM grid (like nb01). The store's `red` group is the FULL scene on the
+  COG's own grid, so the locate-the-POI math gives the SAME pixel coordinates
+  as nb01 on the COG (POI → level-0 pixel (7471, 211) → chunk `red/0/c/7/0`,
+  in-chunk (303, 211), DN 3736 → reflectance 0.2736). The full recipe,
+  straight from the `codecs` metadata: generic zstd decompress (`numcodecs`
+  has a decoder and is already a workshop dep) → `np.frombuffer('<u2')` →
+  undo the delta filter with a wrapping cumsum
+  (`np.cumsum(...).astype('<u2')`; NOTE numcodecs delta differences the
+  *flattened* chunk — it does NOT reset per row like TIFF predictor 2, so
+  it's one cumsum, not one per row) → reshape → apply the scale-offset
+  codec's DN→reflectance (`dn / scale + offset`). Same operations nb01 did by
+  hand on the COG — but here the store declares them. NOTE for the reshape
+  step: a decoded chunk buffer is ALWAYS the full chunk shape from
+  `zarr.json` (1024²), even for the ragged edge chunks (10980 isn't a
+  multiple of 1024) — zarr v3 pads partial chunks with fill_value (−0.1 /
+  DN 0) beyond the array bounds. Optional: sharding stretch.
 - **Make the "this is the nb01 COG in zarr clothing" comparison explicit.** The
-  store IS the same data (bit-exact DNs, same grid, same pyramid), so nb02 can
-  diff the two containers directly. Beats to hit:
+  store's `red` group IS the same data (bit-exact DNs, same grid, same
+  pyramid), so nb02 can diff the two containers directly. Beats to hit:
   - *Declared vs implied:* the decode recipe lives in the `codecs` chain in
     `zarr.json`; the COG implies the same recipe through TIFF tags/conventions
     (predictor, scale/offset, compression: deflate there, zstd here).
@@ -310,12 +362,20 @@ Re-point at the self-hosted v3 store; teach v3 structure:
 - `raw.githubusercontent.com` **does** honor `Range` requests (`Accept-Ranges:
   bytes`, returns `206`) — so byte-range reads from the `data` branch work with
   zero extra infra. 100 MB/file limit is fine (compressed chunks are
-  0.17–1.57 MB in the built whole-scene store; total ~201 MB across 171 chunk
-  files).
+  0.17–1.57 MB in the built sparse multi-band store; total ~201 MB across 171
+  chunk files, all under `red/`).
 - `geozarr-toolkit` (0.1.2), `async-geotiff` (0.5.1), `obstore` (0.11.0) exist on
   PyPI. `geozarr-toolkit` is young — API validated against installed source in
   Phase 3; the helpers (`create_geozarr_attrs`, `create_multiscales_layout`,
-  `validate_group`) work as documented (see Phase 3 notes).
+  `validate_group`) work as documented (see Phase 3 notes). `validate_group`
+  checks only the given group's own attrs — no recursion — so nested band
+  groups are validated one at a time.
+- The scene's Earth Search STAC item carries everything the sparse bands need
+  (verified 2026-07): per-asset `proj:shape`/`proj:transform`, `raster:bands`
+  (data_type/nodata/scale/offset), `eo:bands` common_name — no COG-header
+  fallback needed. Quirks: rededge1/2/3 share common_name `rededge` (naming
+  falls back to asset key), and the item also has single-band `cloud`/`snow`
+  uint8 masks (included, same treatment as scl).
 - Jupytext round-trip preserves the scrubber's inline markers
   (`#| scrub-note:`, `<!-- scrub-omit -->`); scrubber output is deterministic.
 - `ipynb-scrubber scrub-project` has no output-dir override (only
