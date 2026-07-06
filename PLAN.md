@@ -9,37 +9,9 @@ as a handoff so the work can resume on another machine.
 
 ---
 
-## ⚠️ Before moving machines — READ THIS FIRST
+## Machine setup
 
-The Phase 2 work is **committed nowhere**. It is entirely uncommitted in the
-working tree of `jak/2026`, and the `workshop`/`data` branches exist **only
-locally** (not on `origin`). If you switch machines without acting, you lose it.
-
-What IS safe on `origin/jak/2026`:
-- **Phase 1** (notebook 01 fixes) — commit `fc12b51 "revise 01 COG notebook"`.
-
-What is NOT pushed / NOT committed:
-- **All of Phase 2** — uncommitted working-tree changes on `jak/2026` (see
-  `git status` below).
-- **`workshop` branch** — local only, 1 commit `830c5d3 "create workshop branch"`.
-- **`data` branch** — local only, orphan, 1 commit `def0074 "create data branch"`.
-
-### To carry the work to another machine
-
-Commit and push everything first (from this machine):
-
-```commandline
-# 1. Commit the Phase 2 working-tree changes on jak/2026
-git add -A
-git commit -m "Phase 2: src/ layout, jupytext, delivery tooling, hygiene"
-git push origin jak/2026
-
-# 2. Push the dist branches (they are local-only right now)
-git push -u origin workshop
-git push -u origin data
-```
-
-Then on the new machine:
+After cloning on a new machine:
 
 ```commandline
 git clone <repo> && cd cng-raster-formats
@@ -105,7 +77,7 @@ Config lives in `pyproject.toml` (`[tool.ipynb-scrubber]`) and `jupytext.toml`
 - Removed the broken `Tag.pack` stub from the appendix parser.
 - Spellcheck pass on markdown (unit16→uint16, many typos).
 
-### ✅ Phase 2 — Tooling, hygiene, delivery model (DONE, **UNCOMMITTED**)
+### ✅ Phase 2 — Tooling, hygiene, delivery model (COMMITTED, pushed: `51e6ee8`)
 - **`src/` layout + Jupytext:** `src/*_completed.py` are the source of truth;
   `jupytext.toml` pairs `src/` ↔ `notebooks/`. Verified byte-clean round-trip.
 - **Deps:** deleted committed `requirements.txt` (+ README pip section); added
@@ -119,16 +91,8 @@ Config lives in `pyproject.toml` (`[tool.ipynb-scrubber]`) and `jupytext.toml`
   end-to-end (staged notebooks into `./workshop`).
 - **README split:** `main/README.md` rewritten as contributor guide; participant
   README stays on `workshop`.
-- **CI:** intentionally dropped (notebooks depend only on Earth Search + AWS S3 +
-  the self-hosted `data` branch — all reliable; no upstream canary needed).
-
-Uncommitted change set on `jak/2026` (as of writing):
-```
- M .gitignore   M README.md   M pyproject.toml   M uv.lock
- D requirements.txt
- D notebooks/*.ipynb   D notes/*.md   (untracked now, still on disk)
-?? PLAN.md   ?? jupytext.toml   ?? scripts/   ?? src/
-```
+- **CI:** back IN scope — but as ordinary tests, not a cron canary. See
+  Phase 2.5 below.
 
 ### ⏳ Deferred (do after Phases 4/5, so deps aren't curated twice)
 - Trim the `workshop` branch's `pyproject.toml` to runtime-only deps; regen its
@@ -140,6 +104,15 @@ Uncommitted change set on `jak/2026` (as of writing):
 ---
 
 ## Remaining phases
+
+### 🚧 Phase 2.5 — Pre-commit hooks + CI  (IN PROGRESS)
+CI is back in scope after all — as ordinary tests, not a cron canary. Runnable
+locally, on PRs, and on pushes to `main`. Two parts:
+- **prek-managed pre-commit hooks** — system-language local hooks whose tools
+  (ruff etc.) come from the uv dev dependency group — to enforce
+  formatting/linting.
+- **GitHub Actions workflow** that runs the same prek hooks AND generates all
+  notebooks from `src/` and executes them end to end.
 
 ### Phase 3 — Build & publish the v3 GeoZarr store  (NEXT)
 Build our own Zarr **v3** GeoZarr store because no public geospatial v3 store
@@ -163,6 +136,11 @@ for continuity (EPSG:32610).
 - STAC item using modern **proj + raster** extensions, asset href → the
   `data`-branch raw URL. Reference guide:
   https://developmentseed.org/geozarr-examples/examples/cog-to-zarr/
+- **Risk — raw.githubusercontent.com at workshop scale:** ~20–30 participants,
+  typically NAT'd behind one or a few conference-room IPs, all issuing bursts of
+  unauthenticated range requests. Probably fine via the CDN, but have a
+  fallback: a jsDelivr mirror of the `data` branch, or keep the store small
+  enough that "download it locally" is a trivial escape hatch.
 
 ### Phase 4 — Rewrite nb02 (Reading Zarr the Hard Way, v3)
 Re-point at the self-hosted v3 store; teach v3 structure:
@@ -188,7 +166,14 @@ Re-point at the self-hosted v3 store; teach v3 structure:
 - Do the deferred `workshop` pyproject trim + participant README refresh (incl.
   2026 presentation-history rows).
 - Publish `workshop` (via the stage flow) and `data` branches.
+- **End-to-end validation gate before publishing:** fresh clone of the
+  `workshop` branch, `uv sync`, execute all three completed notebooks top to
+  bottom.
 - Set `workshop` as the GitHub **default branch** so attendees land on it.
+- After the default-branch switch, new PRs will default-target `workshop`; add
+  a line to the contributor README telling contributors to retarget `main`.
+- Delete PLAN.md itself once the plan is complete (it graduates into the
+  READMEs).
 
 ---
 

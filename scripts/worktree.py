@@ -10,9 +10,9 @@ yourself.
 Typical use in this repo:
 
     # Prepare the workshop branch worktree, then generate notebooks into it:
-    uv run scripts/worktree.py workshop --path ./_workshop
-    uv run scripts/generate_notebooks.py --output-dir ./_workshop/notebooks
-    # ...review ./_workshop, then `git -C ./_workshop add/commit/push`.
+    uv run scripts/worktree.py workshop                          # -> ./workshop
+    uv run scripts/generate_notebooks.py --output-dir ./workshop
+    # ...review ./workshop, then `git -C ./workshop add/commit/push`.
 
 The same tool works for the data branch (or anything else) that needs content
 staged into a worktree for review.
@@ -107,7 +107,7 @@ def main() -> int:
     parser.add_argument(
         '--path',
         type=Path,
-        help='worktree path (default: ./_<branch>)',
+        help='worktree path (default: ./<branch>)',
     )
     parser.add_argument(
         '--orphan',
