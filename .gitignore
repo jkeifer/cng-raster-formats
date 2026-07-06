@@ -1,12 +1,22 @@
-notebooks/*
-!noteboooks/*.ipynb
+# Generated notebooks + notes. The source of truth is src/*.py; the notebooks
+# are generated on demand (see scripts/generate_notebooks.py) and published to
+# the workshop branch, never committed on main.
+/notebooks/
+/notes/
 
-# Jupyter
+# Jupyter runtime artifacts
 .local/
 .jupyter/
+.ipython/
 .bash_history
 .npm/
 .yarn/
+
+# Git worktrees checked out inside the repo for the dist branches (see
+# scripts/worktree.py). The `workshop` branch holds the generated notebooks +
+# participant-facing files; the `data` branch (orphan) holds the GeoZarr store.
+/workshop/
+/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
