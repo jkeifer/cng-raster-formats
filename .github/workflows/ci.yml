@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync
+      - name: Run prek hooks
+        run: uv run prek run --all-files
+
+  notebooks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync
+      - name: Generate notebooks
+        run: uv run scripts/generate_notebooks.py
+      - name: Execute notebook 01
+        run: uv run jupyter execute notebooks/01_completed.ipynb
+      - name: Execute notebook 02
+        run: uv run jupyter execute notebooks/02_completed.ipynb
+      - name: Execute notebook 03
+        run: uv run jupyter execute notebooks/03_completed.ipynb
