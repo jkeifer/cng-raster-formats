@@ -22,6 +22,11 @@ diffable.
 Notebooks are **never committed on `main`** — they are generated on demand into a
 worktree of the target branch and committed there.
 
+> **Note:** `workshop` is the repository's GitHub **default branch** (so
+> attendees land on it), which means new pull requests default to targeting
+> `workshop`. Contributor PRs should be **retargeted to `main`** — all content
+> changes land on `main` and are published to `workshop` from there.
+
 ## Notebook sources
 
 The source of truth for each notebook is a

@@ -4,10 +4,11 @@ Status doc for updating the *Exploring Cloud-Native Geospatial Formats* workshop
 (3 notebooks: `01` COG, `02` zarr, `03` kerchunk) for 2026 conferences. Written
 as a handoff so the work can resume on another machine.
 
-**Last updated:** 2026-07-06 (Phases 3, 4 AND 5 COMPLETE — store live on the
-`data` branch; nb02 and nb03 fully rewritten and executing end to end; all
-three notebooks done. Next: Phase 6 workshop-branch finalization, and the
-Deferred items below are now unblocked)
+**Last updated:** 2026-07-06 (Phases 3, 4, 5 COMPLETE and Phase 6 mostly done:
+the Deferred items are finished and staged as local `workshop` commit
+`88c4f49` — NOT pushed. What's left is owner-only: review + push that commit,
+fresh-clone validation, flip the GitHub default branch to `workshop`, fill the
+2026 presentation rows, then delete this file. See Phase 6 checklist.)
 **Working branch:** `jak/2026` (merges to `main`)
 
 ---
@@ -404,30 +405,58 @@ externally. What it covers / what was learned:
   --all-files` passes. Also gitignored the notebook's `kerchunk.json` runtime
   artifact.
 
-### ⏳ Deferred (was gated on Phases 4/5 — that gate is now OPEN; do with Phase 6)
-- Trim the `workshop` branch's `pyproject.toml` to runtime-only deps; regen its
-  `uv.lock`. (Currently it still has the pre-Phase-2 pyproject with dev tooling.)
-- Fix the stale participant README on the `workshop` branch (still has the
-  removed pip section, old presentation dates).
-- First real `workshop` branch publish commit (`data` was published in
-  Phase 3).
+### ✅ Deferred items (DONE 2026-07-06, staged as `workshop` commit `88c4f49` — local, NOT pushed)
+- ✅ Trimmed the `workshop` branch's `pyproject.toml` to runtime-only deps +
+  regenerated its `uv.lock`. Dropped all dev tooling and the unused
+  `kerchunk`/`planetary-computer`/`pyproj`/`shapely` (the latter two are hard
+  deps of odc-geo, still present transitively); ADDED `aiohttp`, `obstore`,
+  `obspec-utils` — all three are directly imported by nb03 but were never
+  declared anywhere (they arrived transitively). `jupyterlab` kept for
+  participants. Lock resolves zarr → 3.2.1.
+- ✅ Participant README rewritten for 2026 (exercise names, `notebooks/` vs
+  `notebooks/completed/` split, notes/, Codespaces/docker/uv setup; pip
+  section and stale dates removed). **2026 presentation-history rows are TBD
+  placeholders — owner must fill in real conference names/dates/slides.**
+- ✅ First real `workshop` publish commit staged locally: `88c4f49` on the
+  local `workshop` branch (worktree `./workshop`). Also fixed the branch's
+  broken `.gitignore` (`notebooks/*` + typo'd negation was hiding
+  `notebooks/completed/`; now ignores runtime artifacts instead), and removed
+  the old `NN_completed.ipynb` layout.
+- ✅ Validation pre-run: fresh venv (`uv sync` with the direnv
+  `UV_PROJECT_ENVIRONMENT`/`VIRTUAL_ENV` overrides unset) from the trimmed
+  lock executed all three completed notebooks end to end in the worktree
+  (01 ~33 s, 02 ~12 s, 03 ~10 s).
+- Gotcha found: `scripts/worktree.py` only checks LOCAL branches — on a fresh
+  clone with no local `workshop` branch it silently creates one off HEAD
+  instead of `origin/workshop`. Workaround: `git branch workshop
+  origin/workshop` first. Worth a script fix someday.
 
 ---
 
 ## Remaining phases
 
-### Phase 6 — Finalize workshop branch + docs
-- Do the deferred `workshop` pyproject trim + participant README refresh (incl.
-  2026 presentation-history rows).
-- Publish `workshop` (via the stage flow) and `data` branches.
-- **End-to-end validation gate before publishing:** fresh clone of the
-  `workshop` branch, `uv sync`, execute all three completed notebooks top to
-  bottom.
-- Set `workshop` as the GitHub **default branch** so attendees land on it.
-- After the default-branch switch, new PRs will default-target `workshop`; add
-  a line to the contributor README telling contributors to retarget `main`.
-- Delete PLAN.md itself once the plan is complete (it graduates into the
-  READMEs).
+### Phase 6 — Finalize workshop branch + docs (PARTIALLY DONE 2026-07-06)
+Done (see the Deferred section above for detail):
+- ✅ `workshop` pyproject trim + lock regen, participant README refresh,
+  notebooks + notes staged, `.gitignore` fix — all in local `workshop` commit
+  `88c4f49` (in the `./workshop` worktree, NOT pushed).
+- ✅ Validation pre-run in the worktree: fresh venv from the trimmed lock ran
+  all three completed notebooks end to end.
+- ✅ Contributor README on `main` now tells contributors to retarget PRs to
+  `main` after the default-branch switch.
+- ✅ `data` branch was already published (Phase 3).
+
+**Remaining — owner steps:**
+- [ ] Review the `workshop` commit `88c4f49` in `./workshop`, then `git push`
+      it (`git -C workshop push`).
+- [ ] True fresh-clone validation: clone the `workshop` branch fresh
+      elsewhere, `uv sync`, `uv run jupyter execute` all three
+      `notebooks/completed/*.ipynb` top to bottom.
+- [ ] Set `workshop` as the GitHub **default branch** so attendees land on it.
+- [ ] Fill in the 2026 presentation-history rows in the participant README
+      (currently `TBD (2026)` placeholders — conference names, dates, slide
+      links).
+- [ ] Delete PLAN.md at the very end (it graduates into the READMEs).
 
 ---
 
