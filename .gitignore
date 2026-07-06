@@ -1,9 +1,11 @@
-notebooks/*
-!noteboooks/*.ipynb
+# Runtime artifacts written by executing the notebooks (exercise 3 writes its
+# hand-built kerchunk reference file to the working directory)
+kerchunk.json
 
-# Jupyter
+# Jupyter runtime artifacts
 .local/
 .jupyter/
+.ipython/
 .bash_history
 .npm/
 .yarn/

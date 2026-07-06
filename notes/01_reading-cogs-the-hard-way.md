@@ -42,7 +42,9 @@ print(ifd_offset)
 ```python
 #| scrub-note: cell4
 tags_start = ifd_offset + 2
-tags_count = struct.unpack(f'{endianness}H', url_read_bytes(href, ifd_offset, tags_start))[0]
+tags_count = struct.unpack(
+    f'{endianness}H', url_read_bytes(href, ifd_offset, tags_start)
+)[0]
 tags_count
 ```
 
@@ -61,7 +63,9 @@ print(binary(tags_bytes))
 
 ```python
 #| scrub-note: cell6
-next_ifd_offset = struct.unpack(f'{endianness}I', url_read_bytes(href, tags_end, tags_end + 4))[0]
+next_ifd_offset = struct.unpack(
+    f'{endianness}I', url_read_bytes(href, tags_end, tags_end + 4)
+)[0]
 next_ifd_offset
 ```
 
@@ -70,7 +74,7 @@ next_ifd_offset
 ```python
 #| scrub-note: cell7
 for i in range(0, len(tags_bytes), tag_size):
-    tb = tags_bytes[i:i+tag_size]
+    tb = tags_bytes[i : i + tag_size]
     print(tb)
     print(binary(tb))
 ```
@@ -80,13 +84,15 @@ for i in range(0, len(tags_bytes), tag_size):
 ```python
 #| scrub-note: cell8
 # image column count (width)
-cols = struct.unpack(endianness + 'H', tags[256]['value'][0:struct.calcsize('H')])[0]
+cols = struct.unpack(endianness + 'H', tags[256]['value'][0 : struct.calcsize('H')])[0]
 
 # image row count (height)
 # we can also resolve the struct char in a more automated fashion
 tag = tags[257]
 struct_dtype = DATA_TYPES[tag['data_type']]
-rows = struct.unpack(endianness + struct_dtype, tags[257]['value'][0:struct.calcsize(struct_dtype)])[0]
+rows = struct.unpack(
+    endianness + struct_dtype, tags[257]['value'][0 : struct.calcsize(struct_dtype)]
+)[0]
 
 print(f'Image size is {cols} x {rows}')
 ```
