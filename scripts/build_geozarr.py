@@ -27,15 +27,13 @@ exercise 03's kerchunk/Icechunk manifests, which ARE that missing inventory.
 The multi-band structure also gives nb02 a fuller, more realistic GeoZarr
 store to explore than a single lonely band.
 
-Where the metadata comes from:
-
-- the scene's STAC item (fetched from Earth Search at build time; the item id
-  is derived from the red COG's URL) supplies everything about the other
-  bands: `proj:shape`/`proj:transform` per asset, `raster:bands` (data_type,
-  nodata, scale, offset), `eo:bands` (common_name). Their COGs are never
-  opened.
-- the red band is read for real, in full: base image + overview IFDs via HTTP
-  range requests (async-geotiff + obstore), exactly as before.
+Where everything comes from: the scene's STAC item URL is the script's single
+root input. The item supplies all band metadata (`proj:shape`/`proj:transform`
+per asset, `raster:bands` data_type/nodata/scale/offset, `eo:bands`
+common_name) -- the other bands' COGs are never opened. The one materialized
+band is selected by ASSET KEY in the item, and even its COG URL comes from the
+item (the asset href); that band is read for real, in full: base image +
+overview IFDs via HTTP range requests (async-geotiff + obstore).
 
 Structure: root group -> one child group per band -> multiscale arrays
 ``0..N``. Band groups are named by `eo` common_name (B04 -> ``red``, B02 ->
@@ -124,15 +122,16 @@ from obstore.store import HTTPStore
 # FixedScaleOffset does the whole scale/offset/round/cast step in one codec.
 from zarr.codecs import Delta, FixedScaleOffset, ZstdCodec
 
-# The same scene/asset nb01 resolves via STAC search and nb03 hardcodes. The
-# ONLY raster read by this script; every other band is modeled from the STAC
-# item's metadata alone.
-COG_URL = (
-    'https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com'
-    '/sentinel-2-c1-l2a/10/T/FR/2023/12/S2B_T10TFR_20231223T190950_L2A/B04.tif'
+# The scene's STAC item is the script's single root input: all band metadata
+# comes from it, and the one COG actually read is located by asset key within
+# it (its href). Same item nb01 resolves via STAC search against this catalog;
+# nb03 hardcodes the same asset's URL.
+ITEM_URL = (
+    'https://earth-search.aws.element84.com/v1'
+    '/collections/sentinel-2-c1-l2a/items/S2B_T10TFR_20231223T190950_L2A'
 )
-# The STAC API hosting the scene's item (nb01 searches this same catalog).
-STAC_API = 'https://earth-search.aws.element84.com/v1'
+# The one asset whose raster data is materialized; all others are metadata only.
+DATA_ASSET = 'red'
 
 DIMS = ['y', 'x']
 # Plain zstd rather than blosc(zstd): exercise 02 teaches by-hand chunk reads,
@@ -148,16 +147,9 @@ Level = tuple[tuple[int, int], tuple[float, ...]]
 
 
 def fetch_stac_item() -> dict:
-    """Fetch the scene's STAC item, deriving its id from the COG's URL.
-
-    The Earth Search S3 layout ends .../<collection>/.../<item_id>/<asset>.tif,
-    so both the collection and item id fall out of the COG URL.
-    """
-    parts = COG_URL.split('/')
-    collection, item_id = parts[3], parts[-2]
-    url = f'{STAC_API}/collections/{collection}/items/{item_id}'
-    print(f'fetching STAC item {url}')
-    with urllib.request.urlopen(url, timeout=30) as resp:
+    """Fetch the scene's STAC item -- the root input of the whole build."""
+    print(f'fetching STAC item {ITEM_URL}')
+    with urllib.request.urlopen(ITEM_URL, timeout=30) as resp:
         return json.loads(resp.read())
 
 
@@ -192,6 +184,7 @@ def band_specs(item: dict) -> dict[str, dict]:
             )
         eo = asset.get('eo:bands') or [{}]
         raw[key] = {
+            'asset_key': key,
             'common_name': eo[0].get('common_name'),
             'shape': tuple(shape),
             'transform': tuple(transform[:6]),  # proj: allows a 9-element form
@@ -355,11 +348,16 @@ async def build(out: Path) -> None:
     epsg = item['properties']['proj:epsg']
     if epsg != 32610:
         raise SystemExit(f'error: expected EPSG:32610, got EPSG:{epsg}')
-    data_band = next((n for n, s in specs.items() if s['href'] == COG_URL), None)
+    data_band = next(
+        (n for n, s in specs.items() if s['asset_key'] == DATA_ASSET), None
+    )
     if data_band is None:
-        raise SystemExit(f'error: no asset in the STAC item matches {COG_URL}')
+        raise SystemExit(
+            f'error: the STAC item has no single-band raster asset {DATA_ASSET!r}'
+        )
+    cog_url = specs[data_band]['href']
 
-    base_url, _, cog_path = COG_URL.rpartition('/')
+    base_url, _, cog_path = cog_url.rpartition('/')
     gt = await GeoTIFF.open(cog_path, store=HTTPStore.from_url(base_url))
     if gt.crs.to_epsg() != epsg:
         raise SystemExit(
@@ -402,7 +400,7 @@ async def build(out: Path) -> None:
             f'{len(sources)}'
         )
     print(
-        f'converting {len(specs)} bands from the STAC item; data from {COG_URL}\n'
+        f'converting {len(specs)} bands from the STAC item; data from {cog_url}\n'
         f'  base {gt.shape} @ {gt.transform.a:g} m, {chunk}px tiles -> '
         f'{chunk}px chunks; {len(gt.overviews)} COG overviews'
     )
