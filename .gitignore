@@ -4,6 +4,10 @@
 /notebooks/
 /notes/
 
+# Runtime artifacts written by executing the notebooks (nb03 writes its
+# hand-built kerchunk reference file to the working directory)
+kerchunk.json
+
 # Jupyter runtime artifacts
 .local/
 .jupyter/

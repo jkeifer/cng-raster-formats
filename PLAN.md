@@ -4,10 +4,10 @@ Status doc for updating the *Exploring Cloud-Native Geospatial Formats* workshop
 (3 notebooks: `01` COG, `02` zarr, `03` kerchunk) for 2026 conferences. Written
 as a handoff so the work can resume on another machine.
 
-**Last updated:** 2026-07-06 (Phases 3 AND 4 COMPLETE — store live on the
-`data` branch and verified over raw.githubusercontent.com; nb02 fully
-rewritten against the live store, executes end to end; next: Phase 5 nb03
-rewrite)
+**Last updated:** 2026-07-06 (Phases 3, 4 AND 5 COMPLETE — store live on the
+`data` branch; nb02 and nb03 fully rewritten and executing end to end; all
+three notebooks done. Next: Phase 6 workshop-branch finalization, and the
+Deferred items below are now unblocked)
 **Working branch:** `jak/2026` (merges to `main`)
 
 ---
@@ -334,7 +334,77 @@ for continuity (EPSG:32610).
   zstd magic, B04/green 404s, green fill window, empty group listing);
   `uv run prek run --all-files` passes.
 
-### ⏳ Deferred (do after Phases 4/5, so deps aren't curated twice)
+### ✅ Phase 5 — Rewrite nb03 (Kerchunk → v3 + VirtualiZarr/Icechunk coda) (DONE 2026-07-06)
+`src/03_free-range-artisanal-grass-fed-kerchunk.py` fully rewritten. The
+hand-built reference exercise is kept but emits **v3-shaped** metadata
+(`zarr.json` docs, `codecs` pipeline, `dimension_names`, `c/row/col` chunk
+keys), framed as the payoff of nb02's discovery thread: the COG's tile offset
+tags are an *internal* manifest, kerchunk writes that inventory down
+externally. What it covers / what was learned:
+- **The old notebook's refs decoded WRONG pixel values** (found while
+  modernizing): it declared `numcodecs.delta` for TIFF predictor 2, but
+  numcodecs' delta is a *flattened* cumsum while the predictor restarts per
+  row. Verified empirically against tile (7, 0): per-row decode gives DN 3736
+  (nb01's value), flat decode gives 8869 — every row after row 0 of every
+  tile was silently garbage, unnoticed because the old nb never checked a
+  value. There is NO stock zarr/numcodecs codec for per-row differencing, so
+  the rewrite demonstrates the mismatch on a toy array (new teaching beat,
+  pays off nb02's flattened-vs-per-row footnote), then registers a ~25-line
+  custom v3 `ArrayArrayCodec` (`tiff.predictor2`, cumsum along axis -1) with
+  a loud honesty note: the refs only decode where that codec is registered —
+  the fundamental cost of virtualizing bytes encoded without standard codecs,
+  and exactly why the Phase 3 store re-encoded instead. Rest of the declared
+  chain: `numcodecs.fixedscaleoffset` copied verbatim from the store's
+  `red/0` doc, `bytes` little-endian, `numcodecs.zlib` (canonical dtype
+  float32 reflectance, fill −0.1, matching nb02's contract).
+- **Opening the refs:** fsspec `reference://` + `zarr.storage.FsspecStore`
+  (both filesystem layers need `asynchronous=True`; `skip_instance_cache=True`
+  retires the old "restart the kernel after editing the json" gripe). Payoffs
+  staged against nb02: `zarr.open_group(...).keys()` now returns `['red']`
+  (the manifest IS the inventory — and zero HTTP requests for any metadata),
+  `xarray.open_zarr` actually finds the data variable, and the POI pixel
+  (7471, 211) reads 0.2736 with the logged request being exactly
+  `bytes=161151032-162782871` — the tag 324/325 values for tile (7, 0).
+- **Byte-range logger refreshed:** aiohttp now deprecates subclassing
+  `ClientSession`, so the `LoggingClientSession` device became `TraceConfig`
+  request-start hooks injected via the HTTP filesystem's `get_client` kwarg.
+  Multi-chunk reads updated honestly: zarr v3 fetches one exact range per
+  chunk key, concurrently — no range coalescing like the old fsspec/kerchunk
+  engine did (adjacent-tiles and 14-MB-apart-tiles demos both show two exact
+  per-chunk ranges).
+- **Coda (APIs introspected against installed source, both post-training):**
+  VirtualiZarr 2.7's `KerchunkJSONParser` is **v2-refs-only** (expects
+  `.zarray` + `_ARRAY_DIMENSIONS`), so the notebook builds the model directly
+  from the same refs — `ChunkManifest(entries, shape, separator='/')` +
+  `ManifestArray(ArrayV3Metadata.from_dict(<our doc>), ...)` (accepted the
+  hand-built doc unchanged, custom codec and all) + `ManifestGroup` +
+  `ManifestStore(group, registry=ObjectStoreRegistry({prefix: obstore
+  HTTPStore}))` → `to_virtual_dataset()`, with the 482 MB-apparent vs
+  few-kB-actual (`vds.vz.nbytes`) beat. Icechunk 2.1:
+  `RepositoryConfig.set_virtual_chunk_container(VirtualChunkContainer(prefix,
+  icechunk.http_store()))`, `Repository.create(in_memory_storage(), config,
+  authorize_virtual_chunk_access={prefix: icechunk.credentials.HttpAccess})`
+  (passing `None` is deprecated), `vds.vz.to_icechunk(session.store)` +
+  commit, read-back via `readonly_session` + xarray → 0.2736 again, plus
+  `all_virtual_chunk_locations()` and `ancestry()` for the
+  versioned/transactional beats. Honest caveats in-notebook: icechunk fetches
+  virtual chunks with its own client (invisible to the aiohttp logger), the
+  custom-codec requirement follows the repo, and virtual refs rot if the
+  source COG's bytes ever change.
+- **Scrubber coverage:** 16 `#| scrub-note:` cells (nb01 13, nb02 16; old
+  nb03 had zero) + 3 `<!-- scrub-omit -->` answer cells; `notes/03_*.md` now
+  generates with real content. Exercise notebook verified leak-free (no
+  0.2736/3736/tile-index-77/toy-decode answers in unscrubbed cells).
+- **Verification:** `jupytext --sync` round-trip stable (all three sources
+  unchanged); `generate_notebooks.py` produces completed + exercise + notes;
+  `uv run jupyter execute` of the completed notebook passes end to end
+  against the live COG in ~8 s, with key outputs programmatically checked
+  (toy delta mismatch, 121 chunk refs, group listing, exact byte ranges, POI
+  0.2736 via both fsspec and icechunk paths, ancestry); `uv run prek run
+  --all-files` passes. Also gitignored the notebook's `kerchunk.json` runtime
+  artifact.
+
+### ⏳ Deferred (was gated on Phases 4/5 — that gate is now OPEN; do with Phase 6)
 - Trim the `workshop` branch's `pyproject.toml` to runtime-only deps; regen its
   `uv.lock`. (Currently it still has the pre-Phase-2 pyproject with dev tooling.)
 - Fix the stale participant README on the `workshop` branch (still has the
@@ -345,14 +415,6 @@ for continuity (EPSG:32610).
 ---
 
 ## Remaining phases
-
-### Phase 5 — Rewrite nb03 (Kerchunk → v3 + VirtualiZarr coda)
-- Keep the hand-built reference exercise, but emit **v3-shaped** metadata
-  (`zarr.json`, `codecs`, `dimension_names`, `c/` keys) matching nb02.
-- Add a coda re-opening the same refs via **VirtualiZarr**, and writing to
-  **Icechunk** as the modern preferred store. Refresh the `LoggingClientSession`
-  byte-range demo. Source edit in
-  `src/03_free-range-artisanal-grass-fed-kerchunk.py`.
 
 ### Phase 6 — Finalize workshop branch + docs
 - Do the deferred `workshop` pyproject trim + participant README refresh (incl.
