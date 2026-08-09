@@ -14,8 +14,9 @@ import json
 import struct
 import urllib.request
 
+from collections.abc import Iterator
 from pprint import pprint
-from typing import Any, Iterator, Literal, Self, TypedDict
+from typing import Any, Literal, Self, TypedDict
 
 import folium
 import numpy as np
@@ -62,7 +63,7 @@ ENDIANNESS = {
 def binary(_bytes: bytes, join_str: str = ' ') -> None:
     _hex = _bytes.hex()
     return join_str.join(
-        ['{:08b}'.format(int(_hex[i : i + 2], 16)) for i in range(0, len(_hex), 2)]
+        [f'{int(_hex[i : i + 2], 16):08b}' for i in range(0, len(_hex), 2)]
     )
 
 
@@ -533,7 +534,7 @@ sample_format = unpack_tag(tags[339], endianness)
 pixel_scale = unpack_tag(tags[33550], endianness)
 tie_point = unpack_tag(tags[33922], endianness)
 geo_key_directory = unpack_tag(tags[34735], endianness)
-geo_double_params = tuple()  # we don't have any double params in this image
+geo_double_params = ()  # we don't have any double params in this image
 geo_ascii_params = unpack_tag(tags[34737], endianness)
 gdal_metadata = unpack_tag(tags[42112], endianness)
 original_nodata_value = unpack_tag(tags[42113], endianness)
@@ -637,7 +638,7 @@ transform = Affine(
 # ```
 #
 # The `KeyID` here is just like our TIFF tags: it is an identifier that can be used with an external lookup table to interpret the meaning of the key's value. The `TIFFTagLocation` points to the TIFF tag containing the value for this key: if the value is directly embedded in the key (in the place of `Value_Offset`) then the location is `0` and this key's value is of type `uint16`.
-# 
+#
 # In the case of a non-0 `TIFFTagLocation` value, we know the value is not directly embedded in the key's `Value_Offset`, and that `Value_Offset` is in fact an offset. Unlike other offsets we've grown accustomed to working with in out TIFF traversal, this offset is not a byte offset relative to the file, but instead is "an index based on the natural data type of the specified tag array" pointed to by `TIFFTagLocation`. Combined with `Count`, we have what we need to isolate the set of values pertaining to this key from the target tag's data. The data type of the key value is given by that target tag's data type.
 #
 # For example, if we have a key entry with the values `(1024, 0, 1, 1)`, then we know: the key ID is `1024`, the location of `0` means the value is embedded in the key entry, our count is `1`, and thus that we can interpret the `Value_Offset` as the key value, in this case `1`.
