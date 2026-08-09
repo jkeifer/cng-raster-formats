@@ -243,6 +243,22 @@ def codec_stack(spec: dict) -> tuple[str, object, list]:
     Unscaled uint8 bands (SCL classification, cloud/snow masks) have no
     physical transform to declare, so there is no scaling codec: logical
     dtype IS the storage dtype, delta -> zstd only, fill = the nodata code.
+
+    On fill_value vs nodata, because the two are easy to conflate: zarr v3
+    defines fill_value as nothing more than "an element value to use for
+    uninitialised portions of the array" -- what an ABSENT chunk reads as. It
+    is not a declaration that a pixel is invalid, and v3 has no such
+    declaration; neither the spatial: nor the proj: convention carries a nodata
+    field (that lives in zarr-conventions/missing_value, still at Proposal
+    maturity and implemented by nothing). We deliberately set fill_value to the
+    nodata DN's PHYSICAL value so absent chunks and nodata pixels read alike,
+    which is as close as v3 lets us get.
+
+    Note fill_value is in the DECODED domain -- it is typed by data_type, above
+    the codec chain, not below it. Hence nodata * scale + offset rather than the
+    raw DN: a raw 0 here would mean a perfectly valid 0.0 reflectance, not
+    missing data. (Consumers disagree about all this: GDAL reads fill_value as
+    band nodata, while xarray does not mask on it at all for v3 stores.)
     """
     encoded = np.dtype(spec['data_type']).newbyteorder('<').str
     delta = Delta(dtype=encoded)
