@@ -41,6 +41,7 @@ def _branch_exists(branch: str) -> bool:
     return (
         subprocess.run(
             ['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{branch}'],
+            check=False,
         ).returncode
         == 0
     )

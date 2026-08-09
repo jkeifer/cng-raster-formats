@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# requires-python = ">=3.13"
+# requires-python = ">=3.14"
 # dependencies = [
 #     "async-geotiff>=0.5.1",
 #     "geozarr-toolkit>=0.1.2",

@@ -495,18 +495,18 @@ red_zarr_json = {
         'spatial:registration': 'pixel',
         'zarr_conventions': [
             {
-              'uuid': '689b58e2-cf7b-45e0-9fff-9cfc0883d6b4',
-              'schema_url': 'https://raw.githubusercontent.com/zarr-conventions/spatial/refs/tags/v1/schema.json',
-              'spec_url': 'https://github.com/zarr-conventions/spatial/blob/v1/README.md',
-              'name': 'spatial:',
-              'description': 'Spatial coordinate information'
+                'uuid': '689b58e2-cf7b-45e0-9fff-9cfc0883d6b4',
+                'schema_url': 'https://raw.githubusercontent.com/zarr-conventions/spatial/refs/tags/v1/schema.json',
+                'spec_url': 'https://github.com/zarr-conventions/spatial/blob/v1/README.md',
+                'name': 'spatial:',
+                'description': 'Spatial coordinate information',
             },
             {
-              'uuid': 'f17cb550-5864-4468-aeb7-f3180cfb622f',
-              'schema_url': 'https://raw.githubusercontent.com/zarr-conventions/proj/refs/tags/v1/schema.json',
-              'spec_url': 'https://github.com/zarr-experimental/geo-proj/blob/v1/README.md',
-              'name': 'proj:',
-              'description': 'Coordinate reference system information for geospatial data'
+                'uuid': 'f17cb550-5864-4468-aeb7-f3180cfb622f',
+                'schema_url': 'https://raw.githubusercontent.com/zarr-conventions/proj/refs/tags/v1/schema.json',
+                'spec_url': 'https://github.com/zarr-experimental/geo-proj/blob/v1/README.md',
+                'name': 'proj:',
+                'description': 'Coordinate reference system information for geospatial data',
             },
         ],
     },
@@ -710,8 +710,8 @@ chunk_manifest
 # Then the manifest plus our array document make a `ManifestArray`; a `ManifestGroup` holds it (that's our root group document); and a `ManifestStore` binds the group to an object-store registry that says which store handles URLs under the COG's prefix. VirtualiZarr does its I/O through `obstore` rather than `fsspec`, so we hand it an `HTTPStore` for the bucket's HTTPS endpoint.
 
 # %%
-from obstore.store import HTTPStore
 from obspec_utils.registry import ObjectStoreRegistry
+from obstore.store import HTTPStore
 from virtualizarr.manifests import ManifestArray, ManifestGroup, ManifestStore
 from zarr.core.metadata.v3 import ArrayV3Metadata
 

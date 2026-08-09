@@ -199,7 +199,9 @@ for layout_entry in red_attrs['multiscales']['layout']:
     level_rows, level_cols = level_meta['shape']
     level_gsd = level_meta['attributes']['spatial:transform'][0]
     level_bbox = level_meta['attributes']['spatial:bbox']
-    print(f'level {level}: {level_rows} x {level_cols} @ {level_gsd:.2f} m, covering {level_bbox}')
+    print(
+        f'level {level}: {level_rows} x {level_cols} @ {level_gsd:.2f} m, covering {level_bbox}'
+    )
 
 # %% [markdown]
 # Note the pixel sizes: the levels cover the *same* full-scene extent per the bbox, at progressively coarser resolution. The sizes aren't all clean powers of two because each level's dimensions end up being the ceiling of half its parent's (10980 → 5490 → 2745 → 1373 → 687).
@@ -259,7 +261,8 @@ print_json(store_read_json('scl/0/zarr.json'))
 
 # %%
 #| scrub-note: cell4
-print_json(store_read_json('red/4/zarr.json'))
+red_4_meta = store_read_json('red/4/zarr.json')
+print_json(red_4_meta)
 
 # %% [markdown]
 # The chunk shape was clamped to the array shape, so the entire level is a single chunk: `red/4/c/0/0`. One GET retrieves the whole-scene overview. This is the same trick that makes slippy-map zoom levels fast, and exactly why multiscale layouts like this and COG's overviews exist.
@@ -274,13 +277,14 @@ print(f'first four bytes: {quicklook_bytes[:4].hex(" ")}')
 # %% [markdown]
 # Recognize the opening bytes? Yeah me neither. Turns out `28 b5 2f fd` is meaningful: it's the zstd magic number. The last codec applied when encoding is the first we undo when decoding, and the metadata said that codec is `zstd`, so this is a good sign.
 #
-# `numcodecs` (the same library that provides the scale-offset and delta codecs to zarr) gives us a zstd decoder, which we'll permit ourselves in the same spirit as exercise 1's `zlib`.
+# Decompressing it needs no third-party help at all: Python 3.14 added zstd to the standard library as `compression.zstd` ([PEP 784](https://peps.python.org/pep-0784/)). That makes this exactly the same move as exercise 1's stdlib `zlib`, just a newer algorithm.
 
 # %%
-from numcodecs import Zstd
+# Python 3.14's stdlib gives us zstd, just like `zlib` gave us DEFLATE in
+# exercise 1.
+from compression import zstd
 
-# %%
-quicklook_decompressed = Zstd().decode(quicklook_bytes)
+quicklook_decompressed = zstd.decompress(quicklook_bytes)
 print(f'{len(quicklook_decompressed)} decompressed bytes')
 
 # %% [markdown]
@@ -382,7 +386,7 @@ def read_chunk(band: str, level: int, chunk_row: int, chunk_col: int) -> np.ndar
 
     raw = store_read(f'{band}/{level}/c/{chunk_row}/{chunk_col}')
     dns = np.cumsum(
-        np.frombuffer(Zstd().decode(raw), dtype=codecs['numcodecs.delta']['dtype']),
+        np.frombuffer(zstd.decompress(raw), dtype=codecs['numcodecs.delta']['dtype']),
         dtype=codecs['numcodecs.delta']['dtype'],
     )
     chunk = dns.reshape(meta['chunk_grid']['configuration']['chunk_shape'])
