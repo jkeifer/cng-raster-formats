@@ -61,28 +61,41 @@ def _entry_paths(entry: FileEntry) -> tuple[Path, ...]:
     return tuple(p for p in paths if p is not None)
 
 
-def _prune_stale(entries: list[FileEntry], output_dir: Path, roots: set[str]) -> None:
-    """Delete anything under the managed trees the config doesn't claim.
+def _stale_paths(
+    entries: list[FileEntry], output_dir: Path, roots: set[str]
+) -> list[Path]:
+    """Files under the managed trees that the config doesn't claim.
 
     Everything below notebooks/ and notes/ is generated, so a file we aren't
     about to write is a leftover from an older config -- a renamed notebook, or
-    a notes-file for a notebook that no longer has any notes. Nothing deletes
+    a notes-file for a notebook that no longer has any notes. Nothing removes
     those otherwise, and when the output dir is a published worktree they ship.
-
-    Pruning rather than wiping is deliberate: `jupytext --update` needs the
-    previous notebook to still be there to keep its cell ids stable.
     """
     expected = {p.resolve() for entry in entries for p in _entry_paths(entry)}
+    return [
+        path
+        for root in sorted(roots)
+        if (output_dir / root).is_dir()
+        for path in sorted((output_dir / root).rglob('*'))
+        if path.is_file() and path.resolve() not in expected
+    ]
+
+
+def _prune_stale(stale: list[Path], output_dir: Path, roots: set[str]) -> None:
+    """Delete stale files, and any directory the deletions leave empty.
+
+    Pruning rather than wiping the tree is deliberate: `jupytext --update` needs
+    the previous notebook to still be there to keep its cell ids stable.
+    """
+    for path in stale:
+        path.unlink()
+        print(f'removed stale {path.relative_to(output_dir)}', file=sys.stderr)
 
     for root in sorted(roots):
         base = output_dir / root
         if not base.is_dir():
             continue
-        for path in sorted(base.rglob('*')):
-            if path.is_file() and path.resolve() not in expected:
-                print(f'- stale {path.relative_to(output_dir)}', file=sys.stderr)
-                path.unlink()
-        # Directories the pruning emptied, deepest first.
+        # Deepest first, so a directory emptied by its children's removal goes too.
         for path in sorted(base.rglob('*'), reverse=True):
             if path.is_dir() and not any(path.iterdir()):
                 path.rmdir()
@@ -129,7 +142,7 @@ def _scrub(entry: FileEntry, options: ScrubbingOptions) -> None:
     print(f'✓ {entry.input} → {entry.output}', file=sys.stderr)
 
 
-def generate(output_dir: Path) -> None:
+def generate(output_dir: Path, prune: bool = False) -> None:
     output_dir = output_dir.resolve()
     try:
         config = ProjectConfig.from_file(PYPROJECT)
@@ -145,7 +158,19 @@ def generate(output_dir: Path) -> None:
         if not p.is_absolute() and p.parts
     }
     entries = [_rebase(configured, output_dir) for configured in config.files]
-    _prune_stale(entries, output_dir, roots)
+
+    stale = _stale_paths(entries, output_dir, roots)
+    if stale and prune:
+        _prune_stale(stale, output_dir, roots)
+    elif stale:
+        # Deleting is opt-in: report, and say how to act on it.
+        for path in stale:
+            print(f'stale {path.relative_to(output_dir)}', file=sys.stderr)
+        print(
+            f'{len(stale)} stale file(s) the config no longer claims; '
+            're-run with --prune to delete them',
+            file=sys.stderr,
+        )
 
     for entry in entries:
         _render_completed(entry.input)
@@ -160,8 +185,14 @@ def main() -> int:
         default=REPO_ROOT,
         help='directory containing notebooks/ and notes/ (default: repo root)',
     )
+    parser.add_argument(
+        '--prune',
+        action='store_true',
+        help='delete generated files the config no longer claims, instead of '
+        'just reporting them',
+    )
     args = parser.parse_args()
-    generate(args.output_dir)
+    generate(args.output_dir, prune=args.prune)
     return 0
 
 
