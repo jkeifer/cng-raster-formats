@@ -55,6 +55,39 @@ def _rebase(entry: FileEntry, output_dir: Path) -> FileEntry:
     )
 
 
+def _entry_paths(entry: FileEntry) -> tuple[Path, ...]:
+    """Every path one config entry owns."""
+    paths = (entry.input, entry.output, entry.notes_file)
+    return tuple(p for p in paths if p is not None)
+
+
+def _prune_stale(entries: list[FileEntry], output_dir: Path, roots: set[str]) -> None:
+    """Delete anything under the managed trees the config doesn't claim.
+
+    Everything below notebooks/ and notes/ is generated, so a file we aren't
+    about to write is a leftover from an older config -- a renamed notebook, or
+    a notes-file for a notebook that no longer has any notes. Nothing deletes
+    those otherwise, and when the output dir is a published worktree they ship.
+
+    Pruning rather than wiping is deliberate: `jupytext --update` needs the
+    previous notebook to still be there to keep its cell ids stable.
+    """
+    expected = {p.resolve() for entry in entries for p in _entry_paths(entry)}
+
+    for root in sorted(roots):
+        base = output_dir / root
+        if not base.is_dir():
+            continue
+        for path in sorted(base.rglob('*')):
+            if path.is_file() and path.resolve() not in expected:
+                print(f'- stale {path.relative_to(output_dir)}', file=sys.stderr)
+                path.unlink()
+        # Directories the pruning emptied, deepest first.
+        for path in sorted(base.rglob('*'), reverse=True):
+            if path.is_dir() and not any(path.iterdir()):
+                path.rmdir()
+
+
 def _render_completed(dest: Path) -> None:
     """Render src/<stem>.py -> dest via Jupytext.
 
@@ -103,8 +136,18 @@ def generate(output_dir: Path) -> None:
     except ScrubberError as e:
         raise SystemExit(f'error: {e}') from e
 
-    for configured in config.files:
-        entry = _rebase(configured, output_dir)
+    # The top-level directory of each configured path (notebooks/, notes/) is a
+    # tree we own end to end, so we get to say what does and doesn't belong.
+    roots = {
+        p.parts[0]
+        for configured in config.files
+        for p in _entry_paths(configured)
+        if not p.is_absolute() and p.parts
+    }
+    entries = [_rebase(configured, output_dir) for configured in config.files]
+    _prune_stale(entries, output_dir, roots)
+
+    for entry in entries:
         _render_completed(entry.input)
         _scrub(entry, entry.get_options(config.global_options))
 
