@@ -4,6 +4,11 @@
 /notebooks/
 /notes/
 
+# The 2026 update's working plan/handoff notes. Local scratch, not part of the
+# repo -- its durable content graduates into the READMEs, and it goes away once
+# the workshop branch is published.
+PLAN.md
+
 # Runtime artifacts written by executing the notebooks (nb03 writes its
 # hand-built kerchunk reference file to the working directory)
 kerchunk.json
