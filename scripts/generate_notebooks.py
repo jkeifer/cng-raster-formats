@@ -41,6 +41,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = REPO_ROOT / 'src'
 PYPROJECT = REPO_ROOT / 'pyproject.toml'
 
+# Distinct from 1 (errors) and 2 (argparse usage) so a caller can tell "the tree
+# has drifted" apart from "the run failed": generation still succeeded.
+EXIT_STALE = 3
+
 
 def _rebase(entry: FileEntry, output_dir: Path) -> FileEntry:
     """Repoint one config entry's paths at output_dir.
@@ -142,7 +146,8 @@ def _scrub(entry: FileEntry, options: ScrubbingOptions) -> None:
     print(f'✓ {entry.input} → {entry.output}', file=sys.stderr)
 
 
-def generate(output_dir: Path, prune: bool = False) -> None:
+def generate(output_dir: Path, prune: bool = False) -> bool:
+    """Generate the notebooks. Returns True if stale output was left in place."""
     output_dir = output_dir.resolve()
     try:
         config = ProjectConfig.from_file(PYPROJECT)
@@ -162,6 +167,7 @@ def generate(output_dir: Path, prune: bool = False) -> None:
     stale = _stale_paths(entries, output_dir, roots)
     if stale and prune:
         _prune_stale(stale, output_dir, roots)
+        stale = []
     elif stale:
         # Deleting is opt-in: report, and say how to act on it.
         for path in stale:
@@ -176,6 +182,8 @@ def generate(output_dir: Path, prune: bool = False) -> None:
         _render_completed(entry.input)
         _scrub(entry, entry.get_options(config.global_options))
 
+    return bool(stale)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -188,12 +196,12 @@ def main() -> int:
     parser.add_argument(
         '--prune',
         action='store_true',
-        help='delete generated files the config no longer claims, instead of '
-        'just reporting them',
+        help='delete generated files the config no longer claims; without it '
+        f'they are only reported, and the run exits {EXIT_STALE}',
     )
     args = parser.parse_args()
-    generate(args.output_dir, prune=args.prune)
-    return 0
+    stale = generate(args.output_dir, prune=args.prune)
+    return EXIT_STALE if stale else 0
 
 
 if __name__ == '__main__':
