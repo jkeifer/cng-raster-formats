@@ -18,107 +18,90 @@ worktree to stage a dist branch, e.g.:
 
 Filenames, tags, and clear-text are read from the [tool.ipynb-scrubber] config
 in pyproject.toml, so this stays single-sourced with the local `scrub-project`
-workflow. The scrubber's own engine is reused (via a rewritten temp config), so
-output is identical to `ipynb-scrubber scrub-project`.
+workflow. We drive the scrubber through its Python API with each config entry's
+paths rebased under --output-dir, which is what `scrub-project` itself does
+internally -- so the output is identical, without a rewritten temp config.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
-import tempfile
-import tomllib
 
+from dataclasses import replace
 from pathlib import Path
+
+from ipynb_scrubber.config import FileEntry, ProjectConfig, ScrubbingOptions
+from ipynb_scrubber.exceptions import ScrubberError
+from ipynb_scrubber.processor import process_notebook, write_notes_file
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = REPO_ROOT / 'src'
+PYPROJECT = REPO_ROOT / 'pyproject.toml'
 
 
-def _load_scrubber_config() -> dict:
-    with (REPO_ROOT / 'pyproject.toml').open('rb') as f:
-        data = tomllib.load(f)
-    try:
-        return data['tool']['ipynb-scrubber']
-    except KeyError:
-        raise SystemExit('error: no [tool.ipynb-scrubber] section in pyproject.toml')
+def _rebase(entry: FileEntry, output_dir: Path) -> FileEntry:
+    """Repoint one config entry's paths at output_dir.
+
+    Config paths are relative to the repo root; --output-dir may be a worktree.
+    """
+    return replace(
+        entry,
+        input=output_dir / entry.input,
+        output=output_dir / entry.output,
+        notes_file=output_dir / entry.notes_file if entry.notes_file else None,
+    )
 
 
-def _toml_escape(value: str) -> str:
-    return value.replace('\\', '\\\\').replace('"', '\\"')
-
-
-def _render_completed(input_ipynb: Path, output_dir: Path) -> Path:
-    """Render src/<stem>.py -> <output_dir>/<input path> via Jupytext.
+def _render_completed(dest: Path) -> None:
+    """Render src/<stem>.py -> dest via Jupytext.
 
     The scrubber input paths (e.g. notebooks/completed/01_<name>.ipynb) share
     their stem with the src/ file they are rendered from.
     """
-    stem = input_ipynb.stem  # e.g. "01_reading-cogs-the-hard-way"
-    src_py = SRC_DIR / f'{stem}.py'
+    src_py = SRC_DIR / f'{dest.stem}.py'
     if not src_py.exists():
         raise SystemExit(f'error: missing source file {src_py}')
 
-    dest = output_dir / input_ipynb
     dest.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         ['jupytext', '--to', 'ipynb', '--output', str(dest), str(src_py)],
         check=True,
     )
-    return dest
 
 
-def _write_temp_config(config: dict, output_dir: Path, tmp_dir: Path) -> Path:
-    """Write an .ipynb-scrubber.toml with all paths rebased under output_dir."""
-    lines: list[str] = []
+def _scrub(entry: FileEntry, options: ScrubbingOptions) -> None:
+    """Completed notebook -> exercise notebook (+ notes), via the scrubber API."""
+    notebook = json.loads(entry.input.read_text())
+    processed, notes = process_notebook(notebook, options)
 
-    options = config.get('options', {})
-    if options:
-        lines.append('[options]')
-        for key, val in options.items():
-            lines.append(f'{key} = "{_toml_escape(str(val))}"')
-        lines.append('')
+    if notes:
+        if entry.notes_file is None:
+            raise SystemExit(
+                f'error: {entry.input} has {len(notes)} cell(s) tagged '
+                f'"{options.note_tag}" but no notes-file is configured',
+            )
+        write_notes_file(notes, entry.notes_file)
 
-    for entry in config.get('files', []):
-        completed = output_dir / entry['input']
-        out = output_dir / entry['output']
-        lines.append('[[files]]')
-        lines.append(f'input = "{_toml_escape(str(completed))}"')
-        lines.append(f'output = "{_toml_escape(str(out))}"')
-        if 'notes-file' in entry:
-            notes = output_dir / entry['notes-file']
-            lines.append(f'notes-file = "{_toml_escape(str(notes))}"')
-        lines.append('')
-
-    config_path = tmp_dir / '.ipynb-scrubber.toml'
-    config_path.write_text('\n'.join(lines))
-    return config_path
+    entry.output.parent.mkdir(parents=True, exist_ok=True)
+    # indent=1 matches what `ipynb-scrubber scrub-project` writes.
+    entry.output.write_text(json.dumps(processed, indent=1))
+    print(f'✓ {entry.input} → {entry.output}', file=sys.stderr)
 
 
 def generate(output_dir: Path) -> None:
     output_dir = output_dir.resolve()
-    config = _load_scrubber_config()
+    try:
+        config = ProjectConfig.from_file(PYPROJECT)
+    except ScrubberError as e:
+        raise SystemExit(f'error: {e}') from e
 
-    # 1. Render completed notebooks from src/ into the output dir.
-    for entry in config.get('files', []):
-        _render_completed(Path(entry['input']), output_dir)
-
-    # 2. Scrub completed -> exercise (+ notes) using the scrubber's own engine,
-    #    with a temp config whose paths point into the output dir.
-    with tempfile.TemporaryDirectory() as tmp:
-        config_path = _write_temp_config(config, output_dir, Path(tmp))
-        # Ensure notes output dirs exist.
-        for entry in config.get('files', []):
-            if 'notes-file' in entry:
-                (output_dir / entry['notes-file']).parent.mkdir(
-                    parents=True,
-                    exist_ok=True,
-                )
-        subprocess.run(
-            ['ipynb-scrubber', 'scrub-project', '--config-file', str(config_path)],
-            check=True,
-        )
+    for configured in config.files:
+        entry = _rebase(configured, output_dir)
+        _render_completed(entry.input)
+        _scrub(entry, entry.get_options(config.global_options))
 
 
 def main() -> int:
