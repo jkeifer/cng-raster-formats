@@ -91,4 +91,3 @@ notes-file = "notes/02_reading-zarr-the-hard-way.md"
 [[tool.ipynb-scrubber.files]]
 input = "notebooks/completed/03_free-range-artisanal-grass-fed-kerchunk.ipynb"
 output = "notebooks/03_free-range-artisanal-grass-fed-kerchunk.ipynb"
-notes-file = "notes/03_free-range-artisanal-grass-fed-kerchunk.md"
