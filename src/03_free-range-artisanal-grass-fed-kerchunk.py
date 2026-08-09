@@ -440,6 +440,16 @@ register_codec('tiff.predictor2', TiffPredictor2)
 # * `codecs`: the four-step recipe we just worked out, in encode order
 # * `dimension_names`: `y` then `x`
 # * `attributes`: and while we're writing metadata anyway, we can throw in the `proj:`/`spatial:` conventions from exercise 2
+#
+# The `spatial:` convention wants a `spatial:bbox`, which we don't have sitting in `tiff_attrs` but can derive: the transform's `c`/`f` terms are the top-left corner, and stepping by the pixel sizes `a`/`e` across the image dimensions gets us the other one. Note `e` is negative (rows run north to south), so adding it walks *down* to the minimum y.
+
+# %%
+a, b, c, d, e, f = tiff_attrs['transform']
+xmin, ymax = c, f
+xmax = xmin + a * tiff_attrs['size']['cols']
+ymin = ymax + e * tiff_attrs['size']['rows']
+bbox = [xmin, ymin, xmax, ymax]
+bbox
 
 # %%
 red_zarr_json = {
@@ -463,7 +473,15 @@ red_zarr_json = {
         'name': 'default',
         'configuration': {'separator': '/'},
     },
-    'fill_value': -0.1,
+    # What an absent chunk reads as. Typed by `data_type`, so it's a decoded
+    # float32 -- the nodata DN pushed through the scale/offset, not the raw DN.
+    # Round-tripping through float32 is what makes this agree bit-for-bit with
+    # the store exercise 2 reads.
+    'fill_value': float(
+        np.float32(
+            tiff_attrs['nodata'] * tiff_attrs['scale'] + tiff_attrs['offset'],
+        ),
+    ),
     'codecs': [
         {
             'name': 'numcodecs.fixedscaleoffset',
@@ -489,23 +507,25 @@ red_zarr_json = {
     'dimension_names': ['y', 'x'],
     'attributes': {
         'proj:code': tiff_attrs['crs'],
+        'spatial:dimensions': ['y', 'x'],
         'spatial:shape': [tiff_attrs['size']['rows'], tiff_attrs['size']['cols']],
         'spatial:transform': tiff_attrs['transform'],
         'spatial:transform_type': 'affine',
+        'spatial:bbox': bbox,
         'spatial:registration': 'pixel',
         'zarr_conventions': [
             {
                 'uuid': '689b58e2-cf7b-45e0-9fff-9cfc0883d6b4',
-                'schema_url': 'https://raw.githubusercontent.com/zarr-conventions/spatial/refs/tags/v1/schema.json',
-                'spec_url': 'https://github.com/zarr-conventions/spatial/blob/v1/README.md',
-                'name': 'spatial:',
+                'schema_url': 'https://raw.githubusercontent.com/zarr-conventions/spatial/refs/tags/v0.1/schema.json',
+                'spec_url': 'https://github.com/zarr-conventions/spatial/blob/v0.1/README.md',
+                'name': 'spatial',
                 'description': 'Spatial coordinate information',
             },
             {
                 'uuid': 'f17cb550-5864-4468-aeb7-f3180cfb622f',
-                'schema_url': 'https://raw.githubusercontent.com/zarr-conventions/proj/refs/tags/v1/schema.json',
-                'spec_url': 'https://github.com/zarr-experimental/geo-proj/blob/v1/README.md',
-                'name': 'proj:',
+                'schema_url': 'https://raw.githubusercontent.com/zarr-conventions/proj/refs/tags/v0.1/schema.json',
+                'spec_url': 'https://github.com/zarr-conventions/proj/blob/v0.1/README.md',
+                'name': 'proj',
                 'description': 'Coordinate reference system information for geospatial data',
             },
         ],

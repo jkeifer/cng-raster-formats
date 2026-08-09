@@ -3,7 +3,12 @@
 # requires-python = ">=3.14"
 # dependencies = [
 #     "async-geotiff>=0.5.1",
-#     "geozarr-toolkit>=0.1.2",
+#     # Pinned past 0.1.2: the released version still emits the convention
+#     # schema/spec URLs with a "v1" tag, which 404s (the conventions tagged
+#     # v0.1), and points proj: at the absorbed zarr-experimental org. Commit
+#     # fb49f63 "update for v0.1 releases of spatial, multiscales, proj" fixes
+#     # both. Revert to a version range once a release past 0.1.2 ships.
+#     "geozarr-toolkit @ git+https://github.com/zarr-developers/geozarr-toolkit@fb49f635d229d24ff4accbebbb0ca61098a606a4",
 #     "obstore>=0.11.0",
 #     "zarr>=3.1.3",
 # ]
