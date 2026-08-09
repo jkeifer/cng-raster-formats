@@ -223,7 +223,7 @@ print_json(red_0_meta)
 # * `data_type`: `float32`, but the COG stored `uint16`, right?
 # * `chunk_grid`: regular 1024 × 1024 chunks, like the COG's full-resolution IFD (so at this level the Zarr chunks correspond 1:1 with the COG's tiles)
 # * `chunk_key_encoding`: chunk keys are named `c/{row}/{col}` with `/` as the separator (v2 used keys like `7.0`; v3 nests them under `c/`)
-# * `fill_value`: the value a reader should assume where there's no data (`-0.10000000149011612` is `-0.1` rendered from float32 into JSON's double precision)
+# * `fill_value`: what an *uninitialized* part of the array reads as (`-0.10000000149011612` is `-0.1` rendered from float32 into JSON's double precision). Note it's in the array's own `data_type`, i.e. the decoded value, not a stored DN. We'll come back to what this does and doesn't mean.
 # * `dimension_names`: `["y", "x"]` (in v2, dimension naming was `_ARRAY_DIMENSIONS`, an attribute convention invented by xarray; in v3 it's part of the core spec)
 # * `codecs`: the pipeline that turns array values into stored chunk bytes (this is my favorite part!)
 
@@ -447,7 +447,17 @@ green_easy = zarr.open_array(f'{STORE_URL}/green/0', mode='r')
 green_easy[7168:7172, 208:212]
 
 # %% [markdown]
-# No exception, no warning: the underlying 404 is silently translated into a window of `-0.1`, the fill value. Perfectly valid nodata, indistinguishable from a region of the scene that was actually observed and actually empty.
+# No exception, no warning: the underlying 404 is silently translated into a window of `-0.1`, the fill value. Indistinguishable from a region of the scene that was actually observed and actually empty.
+#
+# ### An aside: `fill_value` is not nodata
+#
+# It's tempting to read that last sentence as "so `-0.1` is the nodata value," but the spec is narrower than that. Zarr v3 says only that `fill_value` "provides an element value to use for uninitialised portions of the Zarr array." It answers *what do I get where there is no chunk*. It does **not** say *these pixels are invalid*, and v3 has no way to say that at all: there's no nodata field in `spatial:` or `proj:`, and the convention that would add one ([`missing_value`](https://github.com/zarr-conventions/missing_value)) is still a proposal that no tool implements.
+#
+# Whoever built this store leaned on that gap deliberately: they set `fill_value` to the physical value that the nodata DN decodes to, so that "never written" and "written, but nodata" look the same. That's a convention, not a guarantee, and readers don't agree about it. GDAL treats `fill_value` as the band's nodata and will mask on it. `xarray` will not: for v3 stores it ignores `fill_value` for masking entirely and looks for a CF `_FillValue` *attribute*, which this store doesn't have. So the same bytes are masked by one tool and not the other.
+#
+# Note also which side of the codec chain `fill_value` lives on. It's typed by `data_type`, so it's a *decoded* float32 value---`-0.1`, not the `uint16` DN `0` that's actually absent from storage. CF's `_FillValue`, confusingly, is conventionally the opposite: the packed value. Two "the same" concepts, two different numbers.
+#
+# Exercise 1 had none of this ambiguity, but only because it had no concept at all: the COG's nodata was a null-terminated ASCII string in a GDAL-specific tag that we parsed and cast ourselves. Zarr pulled the two ideas apart, and hasn't yet finished putting the second one back.
 #
 # We've hit the discovery gap again, at the chunk level, a deeper version of the problem we met at the root group. The metadata told us what the array would look like _if it had data_; it cannot tell us which chunks exist, because it doesn't know anything about the actual chunks. It has no manifest.
 #
