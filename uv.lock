@@ -393,6 +393,7 @@ dev = [
     { name = "jupytext" },
     { name = "prek" },
     { name = "ruff" },
+    { name = "workshopify" },
 ]
 
 [package.metadata]
@@ -416,10 +417,20 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "ipynb-scrubber", specifier = ">=0.4.1" },
+    { name = "ipynb-scrubber", specifier = ">=0.5.0" },
     { name = "jupytext", specifier = ">=1.19.4" },
     { name = "prek", specifier = ">=0.4.8" },
     { name = "ruff", specifier = ">=0.15.20" },
+    { name = "workshopify", specifier = ">=0.2.1" },
+]
+
+[[package]]
+name = "cogapp"
+version = "3.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/ea/4ffa8095e0b675e9961cbdcad002c09d35d4ab76ff99d61a014e9e6bcd53/cogapp-3.6.0.tar.gz", hash = "sha256:ec2a9170bfa644bf0d91996fdb5576c13d7e5e848bb2378a6f92727b48f92604", size = 59742, upload-time = "2025-09-21T15:54:13.553Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/05/1c/23b5110b7cb305f0fe3a5d6809d6804c1cb57d57b59516dbb5e24aaf95fc/cogapp-3.6.0-py3-none-any.whl", hash = "sha256:6ea11c63221f92978d37d8d76208eadeae2a6e4641d323f165738a5464a19d32", size = 30550, upload-time = "2025-09-21T15:54:12.205Z" },
 ]
 
 [[package]]
@@ -683,11 +694,14 @@ wheels = [
 
 [[package]]
 name = "ipynb-scrubber"
-version = "0.4.1"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/03/1d/29aac8d5c3397567ec74e41bfe57782ddf526e672b758d6f22e01c252358/ipynb_scrubber-0.4.1.tar.gz", hash = "sha256:ddf3b485b8c4e9fb05b9a931f8a515a9117955c30097bee71ad63c1abc265a5a", size = 42618, upload-time = "2025-10-26T17:03:14.013Z" }
+dependencies = [
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1a/28/5beeb77a2fc0fd152e240895d48dd787c0e5fb4d1bb623f0036570312a1b/ipynb_scrubber-0.5.0.tar.gz", hash = "sha256:1ceac3645375b0f5a6d63dda170980feedb2be066db54b4d7c2641c8ad381436", size = 150090, upload-time = "2026-08-12T04:57:14.483Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f0/dd/aae450b82cdd674279f972a8e6e3e0dffb5737f940900adc9287766367bb/ipynb_scrubber-0.4.1-py3-none-any.whl", hash = "sha256:7e94f1c40de96504b62681e10353565adb657984fa96f5b7aae0e59610d157d4", size = 18701, upload-time = "2025-10-26T17:03:12.613Z" },
+    { url = "https://files.pythonhosted.org/packages/37/36/a309d15dc7d86359b09ebdfe232093b5132198c7a5c879ff45f6417ee0ec/ipynb_scrubber-0.5.0-py3-none-any.whl", hash = "sha256:d5fe5f0bd469e34ba9c69b2ef339de0c4967dfc6e5c75946c3490c256600e4c9", size = 56134, upload-time = "2026-08-12T04:57:13.172Z" },
 ]
 
 [[package]]
@@ -2272,6 +2286,15 @@ wheels = [
 ]
 
 [[package]]
+name = "tomlkit"
+version = "0.15.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/96/e07752635b98536177fa1f37671c8f3cdde2e724c6bcf6034b2cfb571565/tomlkit-0.15.1.tar.gz", hash = "sha256:e25bbf38843005246210a12982776f27f99cb9be67160e14434d0c0d21ee1e97", size = 180129, upload-time = "2026-07-17T01:48:04.562Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/13/bc/8c13eb66537dce1d2bd3a57132902f38d0e7f5bb46fa9f4daed9fe9d76ee/tomlkit-0.15.1-py3-none-any.whl", hash = "sha256:177a05aece5a8ca5266fd3c448abb47b8d352f09d477d3ca8332db4d89b24304", size = 49449, upload-time = "2026-07-17T01:48:05.728Z" },
+]
+
+[[package]]
 name = "tornado"
 version = "6.5.8"
 source = { registry = "https://pypi.org/simple" }
@@ -2434,6 +2457,21 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/2c/41/aa4bf9664e4cda14c3b39865b12251e8e7d239f4cd0e3cc1b6c2ccde25c1/websocket_client-1.9.0.tar.gz", hash = "sha256:9e813624b6eb619999a97dc7958469217c3176312b3a16a4bd1bc7e08a46ec98", size = 70576, upload-time = "2025-10-07T21:16:36.495Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/34/db/b10e48aa8fff7407e67470363eac595018441cf32d5e1001567a7aeba5d2/websocket_client-1.9.0-py3-none-any.whl", hash = "sha256:af248a825037ef591efbf6ed20cc5faa03d3b47b9e5a2230a529eeee1c1fc3ef", size = 82616, upload-time = "2025-10-07T21:16:34.951Z" },
+]
+
+[[package]]
+name = "workshopify"
+version = "0.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cogapp" },
+    { name = "ipynb-scrubber" },
+    { name = "jupytext" },
+    { name = "tomlkit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/52/01/89f7aac778712d1e8fcb2a3b242b8632402cbdc1b2157e5b5e6810b8d0a1/workshopify-0.2.1.tar.gz", hash = "sha256:1b5af4943d0f245b562942df7c2c99c2a0dea0df2e3a35be545e155ec0977bf1", size = 96343, upload-time = "2026-08-13T00:23:42.169Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f1/40/9fff2b24e997baf207bdebbfdae248cbff9c3902909347416662b89f64b7/workshopify-0.2.1-py3-none-any.whl", hash = "sha256:dd1d3c03e4396bf6d0ecab8a871555886d9683765cd9c95cab951e1210b05d8a", size = 45400, upload-time = "2026-08-13T00:23:40.972Z" },
 ]
 
 [[package]]

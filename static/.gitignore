@@ -1,15 +1,4 @@
-# Generated notebooks + notes. The source of truth is src/*.py; the notebooks
-# are generated on demand (`workshopify generate`) and published to the
-# workshop branch, never committed on main.
-/notebooks/
-/notes/
-
-# The 2026 update's working plan/handoff notes. Local scratch, not part of the
-# repo -- its durable content graduates into the READMEs, and it goes away once
-# the workshop branch is published.
-PLAN.md
-
-# Runtime artifacts written by executing the notebooks (nb03 writes its
+# Runtime artifacts written by executing the notebooks (exercise 3 writes its
 # hand-built kerchunk reference file to the working directory)
 kerchunk.json
 
@@ -20,13 +9,6 @@ kerchunk.json
 .bash_history
 .npm/
 .yarn/
-
-# Git worktrees checked out inside the repo for the dist branches (see
-# `workshopify build` and `workshopify worktree`). The `workshop` branch holds
-# the generated notebooks + participant-facing files; the `data` branch
-# (orphan) holds the GeoZarr store.
-/workshop/
-/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -362,7 +362,7 @@ print(Delta(dtype='<u2').decode(toy_tiff_encoded.tobytes()).reshape(2, 3))
 # **Question**: What happened to the second row, and why? Would this kind of error be easy to spot in real imagery?
 
 # %% [markdown]
-# <!-- scrub-omit -->
+# <!-- scrub-omit: -->
 # **Answer**: The flattened cumulative sum never resets, so row 1's absolute first value (1000) gets added on top of row 0's final value (12), and the entire second row comes out shifted by 12. In a full 1024 x 1024 tile every row after the first inherits the accumulated garbage of all the rows above it (wrapping modulo 65536, for extra spice), so only row 0 decodes correctly. And no, it would not necessarily be easy to spot: the values can easily be plausible-looking numbers and not obvious noise, exactly the kind of silent wrongness that makes "declare the recipe correctly" matter.
 #
 # Fun fact: the previous edition of this workshop declared `delta` in its hand-built references and never noticed the error!
@@ -411,25 +411,11 @@ class TiffPredictor2(ArrayArrayCodec):
 register_codec('tiff.predictor2', TiffPredictor2)
 
 # %% [markdown]
-# **An honest cost, stated loudly**: our references now decode correctly, but only in an environment where a codec named `tiff.predictor2` is registered. Hand this reference file to someone else and their zarr will refuse it. This is the fundamental tradeoff of virtualizing bytes you didn't encode: formats whose transforms map onto standard codecs (netCDF4/HDF5's chunk compression, for instance--the case kerchunk was invented for) virtualize cleanly, while formats with bespoke encodings need custom codecs at every reader. It's also precisely why exercise 2's store *re-encoded* the pixels into standard codecs instead of referencing the COG's bytes: a store you write yourself can promise portability that a store you merely point at cannot.
-#
-# ## Building the array document
-#
-# Now we can assemble `red/zarr.json`. We built one of these from a live example in exercise 2 (`red/0/zarr.json` in the store--worth a side-by-side look afterwards); the fields we need:
-#
-# * `zarr_format` / `node_type`: `3`, and this node is an `array`
-# * `shape`: the image dimensions, `(row, col)` order
-# * `data_type`: `float32`--the canonical type, per our contract discussion
-# * `chunk_grid`: regular, with the COG's tile size as the chunk shape (at full resolution the tiles and chunks correspond 1:1, as we confirmed in exercise 2)
-# * `chunk_key_encoding`: the default `c/`-style keys with `/` separators
-# * `fill_value`: the *physical* value of the nodata DN: `0 * 0.0001 + -0.1 = -0.1`, matching exercise 2's store
-# * `codecs`: the four-step recipe we just worked out, in encode order
-# * `dimension_names`: `y` then `x`
-# We now must acknowledge an important detail: our references now decode correctly, but only in an environment where this `tiff.predictor2` codec is registered. Hand this reference file to someone else without this codec in their environment and Zarr will not be able to use it. Such is the fundamental tradeoff of virtualizing bytes you didn't encode, or having this type of extensibility in general. Formats whose transforms map onto standard codecs (netCDF4/HDF5's chunk compression, for instance--the case kerchunk was invented for) virtualize cleanly, while formats with bespoke encodings need custom codecs at every reader.
+# **Beware of custom codecs**: our references now decode correctly, but only in an environment where a codec named `tiff.predictor2` with the same functionality is registered. Hand this reference file to someone else and their zarr will refuse it. This is the fundamental tradeoff of virtualizing bytes you didn't encode: formats whose transforms map onto standard codecs (netCDF4/HDF5's chunk compression, for instance, the case kerchunk was invented for) tend to virtualize cleanly, while formats with different encodings need custom codecs at every reader. It's also precisely why exercise 2's store _re-encoded_ the pixels into standard Zarr codecs instead of referencing the COG's bytes.
 #
 # ### Building the array document
 #
-# We can finally assemble `red/zarr.json`. We can use the `red/0/zarr.json` in the exercise 2 Zarr store as a template (worth a side-by-side look afterwards, if you don't remember it), and from that we see the fields we need:
+# Now we're ready, finally, to assemble `red/zarr.json`. We can use the `red/0/zarr.json` in the exercise 2 Zarr store as a template (worth a side-by-side look afterwards, if you don't remember it), and from that we see the fields we need:
 #
 # * `zarr_format` / `node_type`: `3`, and this node is an `array`
 # * `shape`: the image dimensions, `(row, col)` order
@@ -441,7 +427,7 @@ register_codec('tiff.predictor2', TiffPredictor2)
 # * `dimension_names`: `y` then `x`
 # * `attributes`: and while we're writing metadata anyway, we can throw in the `proj:`/`spatial:` conventions from exercise 2
 #
-# The `spatial:` convention wants a `spatial:bbox`, which we don't have sitting in `tiff_attrs` but can derive: the transform's `c`/`f` terms are the top-left corner, and stepping by the pixel sizes `a`/`e` across the image dimensions gets us the other one. Note `e` is negative (rows run north to south), so adding it walks *down* to the minimum y.
+# The `spatial:` convention wants a `spatial:bbox`, which we don't have sitting in `tiff_attrs` but can derive: the transform's `c`/`f` terms are the top-left corner, and stepping by the pixel sizes `a`/`e` across the image dimensions gets us the other one. Note `e` is negative (rows run north to south), so adding it walks _down_ the rows to the minimum y.
 
 # %%
 a, b, c, d, e, f = tiff_attrs['transform']
@@ -474,7 +460,7 @@ red_zarr_json = {
         'configuration': {'separator': '/'},
     },
     # What an absent chunk reads as. Typed by `data_type`, so it's a decoded
-    # float32 -- the nodata DN pushed through the scale/offset, not the raw DN.
+    # float32, the nodata DN pushed through the scale/offset, not the raw DN.
     # Round-tripping through float32 is what makes this agree bit-for-bit with
     # the store exercise 2 reads.
     'fill_value': float(
@@ -572,10 +558,10 @@ print(f'{len(refs)} keys ({tile_rows * tile_cols} chunk references)')
 print(f'red/c/7/0 -> {refs["red/c/7/0"]}')
 
 # %% [markdown]
-# **Question**: In exercises 1 and 2 our POI pixel lived in tile/chunk (7, 0). Do the offset and length in `red/c/7/0` match what exercise 1's tag parsing found for that tile?
+# **Question**: In exercises 1 and 2, our POI pixel lived in tile/chunk (7, 0). Do the offset and length in `red/c/7/0` match what exercise 1's tag parsing found for that tile?
 
 # %% [markdown]
-# <!-- scrub-omit -->
+# <!-- scrub-omit: -->
 # **Answer**: They must, as they're the same numbers. Tile (7, 0) is linear index 77 (7 x 11 + 0) in the row-major tile order, and entry 77 of the `tile_offsets`/`tile_byte_counts` tags is offset 161,151,032 with length 1,631,840. Our loop copied exactly those values into the `red/c/7/0` reference. The manifest isn't *derived from* the COG's inventory; it *is* the COG's inventory, just transcribed into a new format.
 
 # %% [markdown]
@@ -668,15 +654,12 @@ poi_reflectance = float(dataset.red[7471, 211].values)
 print(f'POI red reflectance: {poi_reflectance:.4f}')
 
 # %% [markdown]
-# **Question**: Compare the logged byte range against the `red/c/7/0` reference (and exercise 1's tag values). And is that reflectance the number we've seen twice before?
+# <!-- scrub-omit: -->
+# **Question**: Compare the logged byte range against the `red/c/7/0` reference (and exercise 1's tag values). Are these as expected? Is this the expected reflectance value?
 
 # %% [markdown]
-# <!-- scrub-omit -->
-# **Question**: Compare the logged byte range against the `red/c/7/0` reference (and exercise 1's tag values). Are these as expected? What does the reflectance value tell us?
-
-# %% [markdown]
-# <!-- scrub-omit -->
-# **Answer**: The request was `bytes=161151032-162782871`, so the start is equal to the manifest's offset, and the end is equal to offset + length - 1. That is byte-for-byte the range exercise 1 computed from tags 324/325 for tile (7, 0). And the reflectance value: it clearly flowed through four declared codecs, including our hand-rolled predictor codec, to give us an answer. The codec pipeline worked!
+# <!-- scrub-omit: -->
+# **Answer**: The request was `bytes=161151032-162782871`, so the start is equal to the manifest's offset, and the end is equal to offset + length - 1. That is byte-for-byte the range exercise 1 computed from tags 324/325 for tile (7, 0). And the reflectance value: it clearly flowed through four declared codecs, including our hand-rolled predictor codec, to give us the same answer we saw in exercise 1 and 2. The codec pipeline worked!
 
 # %% [markdown]
 # ## Reading across chunks
@@ -690,7 +673,7 @@ two_tiles.shape
 # %% [markdown]
 # Two requests, one per chunk, each with exactly its own manifest range. If you used GDAL, or an earlier edition of this notebook, to read these chunks in this way, you might have expected the two nearly-touching ranges to be coalesced into a single request. That is, in fact, a real optimization some clients perform. Zarr's store interface fetches each chunk key independently (because in a non-virtual store they are different objects that cannot be coalesced), however, and leans on concurrency instead. The manifest's job is the same either way: it supplies the exact ranges; request-shaping is client strategy on top.
 #
-# And when the chunks *aren't* neighbors in the file? Tiles (7, 0) and (8, 0) are vertically adjacent in the image, but row-major layout puts roughly 14 MB of other tiles between them in the COG.
+# And when the chunks _aren't_ neighbors in the byte layout of file? Tiles (7, 0) and (8, 0) are vertically adjacent in the image, but row-major layout puts roughly 14 MB of other tiles between them in the COG.
 
 # %%
 two_tiles_apart = dataset.red[7168:9216, 0:1024].values
@@ -811,7 +794,7 @@ ic_dataset = xarray.open_zarr(readonly_session.store, consolidated=False)
 print(f'POI red reflectance: {float(ic_dataset.red[7471, 211].values):.4f}')
 
 # %% [markdown]
-# The same reflectance value we saw above. (Note that no request appeared in our logs because Icechunk fetches virtual chunks with its own internal HTTP client, not aiohttp. But it issued the same range read our manifest dictates. Note also that our custom codec caveat followed us here: this repository's array still declares `tiff.predictor2`, so its readers need that codec too.)
+# That's the same reflectance value we saw above. It works! (Note that no request appeared in our logs because Icechunk fetches virtual chunks with its own internal HTTP client, not aiohttp. But it issued the same range read our manifest dictates. Note also that our custom codec caveat followed us here: this repository's array still declares `tiff.predictor2`, so its readers need that codec too.)
 #
 # And because the manifest is now *versioned data*, we can interrogate it like data, for example listing every foreign location this repository would touch, or walking its commit history:
 

@@ -21,6 +21,8 @@ jobs:
         run: uv sync
       - name: Run prek hooks
         run: uv run prek run --all-files
+      - name: Check rendered values and assets are current
+        run: uv run workshopify check
 
   notebooks:
     runs-on: ubuntu-latest
@@ -33,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: uv sync
       - name: Generate notebooks
-        run: uv run scripts/generate_notebooks.py
+        run: uv run workshopify generate
       - name: Execute notebook 01
         run: uv run jupyter execute notebooks/completed/01_reading-cogs-the-hard-way.ipynb
       - name: Execute notebook 02
