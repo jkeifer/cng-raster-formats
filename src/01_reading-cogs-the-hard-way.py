@@ -433,7 +433,7 @@ for idx, tile_offset in enumerate(tile_offsets):
 # * Can you use the unpacking examples to create a generalized approach to unpacking the tag values and apply that to the rest of the tags in the IFD? The next section will have you unpack all the tags, so finding a quicker and more efficient way to do this might be helpful.
 
 # %% [markdown]
-# <!-- scrub-omit -->
+# <!-- scrub-omit: -->
 # ### Answers
 #
 # * The COG is 218,693,282 bytes. The last tile starts at offset 217,929,856. The difference between those two is 763,426 bytes. Looking at the offset of the second-to-last tile, 216,879,023, we can see that tile to be 217,929,856 - 216,879,023 = 1,050,833 bytes in size. So 763,426 bytes is will within the expected size of a tile, and because of that we can reasonably conclude that this tile is the last data in the file.
@@ -555,7 +555,7 @@ original_nodata_value = unpack_tag(tags[42113], endianness)
 compression
 
 # %% [markdown]
-# <!-- scrub-omit -->
+# <!-- scrub-omit: -->
 # **Answer**: In this case we have a value of `8`, which maps to `DEFLATE`. Thus, any tile we read will need to be appropriately decompressed (ehm, inflated? Actually, yes!). We can use the Python stdlib `zlib` to inflate `DEFLATE`-compressed data.
 
 # %% [markdown]
@@ -582,7 +582,7 @@ sample_format, bits_per_sample
 # **Question**: What does the value of the `sample_format` tag indicate with regards to the data type and length of the cell values in this image (e.g., `uint32`, `int8`, `float32`, etc.)? What does this data type map to in the struct format characters?
 
 # %% [markdown]
-# <!-- scrub-omit -->
+# <!-- scrub-omit: -->
 # **Answer**: Our data type is `uint16`, which is char `H`.
 
 # %% [markdown]
@@ -689,7 +689,7 @@ geo_keys
 # **Question**: From the extracted geo key values, can you find the CRS and it's EPSG code?
 
 # %% [markdown]
-# <!-- scrub-omit -->
+# <!-- scrub-omit: -->
 # **Answer**: Key `3072` here is `ProjectedCSTypeGeoKey`, which, as this is a projected coordinate system (as defined by key `1`), maps to the EPSG code for the CRS of these data, `32610`. That EPSG code is for the CRS for UTM zone 10N, which it turns out is not a particularly surprising given the value we can see for key `1026` (`GTCitationGeoKey`).
 
 # %% [markdown]
@@ -821,16 +821,35 @@ tile_array_unfiltered
 gdal_metadata
 
 # %%
-# fill in the value_offset and value_scale from the above
+#| scrub-note:
+#|   id: cell13
+#|   text: |
+#|     # fill in the value_offset and value_scale from the above
+#|     value_offset = <OFFSET>
+#|     value_scale = <SCALE>
+#|     tile_array_scaled_offset = (tile_array_unfiltered * value_scale) + value_offset
+#|     tile_array_scaled_offset
+# value_offset and value_scale from the above GDAL metadata
 value_offset = -0.1
 value_scale = 0.0001
 tile_array_scaled_offset = (tile_array_unfiltered * value_scale) + value_offset
 tile_array_scaled_offset
 
 # %% [markdown]
+# ### Finding the reflectance of our POI
+#
+# We have everything we need to read the reflectance of our POI: cell coordinates and an array of reflectances values. We just have to convert our cell coordinates, which are relative to the entire scene's grid, to those relative to the tile, and then we can grab that value out:
+
+# %%
+in_tile_row, in_tile_col = cell.row % tile_length, cell.col % tile_width
+poi_reflectance = tile_array_scaled_offset[in_tile_row, in_tile_col]
+print(f'in-tile coords: ({in_tile_row}, {in_tile_col})')
+print(f'POI red reflectance: {poi_reflectance:.4f}')
+
+# %% [markdown]
 # ## Visualizing the tile on our map
 #
-# Now that we have our tile data, it would be great to see it alongside our POI to visually confirm we got the tile we expected. It turns out Folium has a kinda hokey way of converting numpy arrays to PNGs for display on the map, which we can leverage here to visually verify the data we've read for our tile and the operations we've done on it. It's not perfect, as it assumes our data is aligned to the mercator grid (which it probably isn't), but it's close enough for us to take a look.
+# Was that value right? It would be great to see it alongside our POI to visually confirm we got the tile  and reflectance we expected. It turns out Folium has a kinda hokey way of converting numpy arrays to PNGs for display on the map, which we can leverage here to visually verify the data we've read for our tile and the operations we've done on it. It's not perfect, as it assumes our data is aligned to the mercator grid (which it probably isn't), but it's close enough for us to take a look.
 #
 # We just need the tile's min and max latitude and longitude (in EPSG:4326 coordinates) so we can tell Folium it's bounding box (roughly), then we can (re-)make our map and add our layers. We can use our `tile` object to compute those coordinates in our image CRS then convert them to EPSG:4326.
 

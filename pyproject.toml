@@ -31,12 +31,32 @@ Repository = 'https://github.com/jkeifer/cng-raster-formats'
 [tool.uv]
 package = false
 
+[tool.workshopify.build]
+# Repo files that ship to participants unchanged. Files that differ from
+# main's -- the participant README and .gitignore -- live in static/ instead;
+# nothing appears in both places, and a published path claimed by two sources
+# is a build error rather than a race.
+#
+# The published pyproject.toml and uv.lock are neither copied nor listed: they
+# are derived from this file and its lock, keeping [project] and [tool.uv] and
+# dropping the authoring machinery below.
+include = [
+    "Dockerfile",
+    "compose.yml",
+    ".devcontainer",
+    "LICENSE",
+]
+
 [dependency-groups]
 dev = [
-    "ipynb-scrubber>=0.4.1",
+    # 0.5.0 is a hard floor: src/ uses its marker syntax -- `scrub-omit:` with
+    # its colon, and the id/text mapping form of scrub-note -- which 0.4.1
+    # reads as something else or not at all.
+    "ipynb-scrubber>=0.5.0",
     "jupytext>=1.19.4",
     "prek>=0.4.8",
     "ruff>=0.15.20",
+    "workshopify>=0.2.1",
 ]
 
 [tool.ruff.format]
@@ -62,7 +82,7 @@ lines-between-types = 1
 # Workflow:
 #   1. Edit src/NN_<name>.py (or the notebook in Jupyter).
 #   2. `uv run jupytext --sync src/*.py` to sync the pair.
-#   3. `uv run scripts/generate_notebooks.py` to regenerate the exercise
+#   3. `uv run workshopify generate` to regenerate the exercise
 #      notebooks + notes from the completed notebooks.
 #
 # Only the completed notebooks (notebooks/completed/) are paired; the
