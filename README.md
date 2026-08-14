@@ -1,48 +1,42 @@
 # Exploring Cloud-Native Geospatial Formats: A Hands-on Workshop for Raster Data
 
-This is the **participant branch** of the workshop: it contains the
-ready-to-run exercise notebooks and everything needed to run them. (If you are
-looking to contribute to the workshop content itself, see the
-[`main` branch](https://github.com/jkeifer/cng-raster-formats/tree/main)
-instead.)
+Dig into three cloud-native raster formats—COGs, Zarr, and Kerchunk—and learn
+how data access works under the hood with hands-on Python exercises, no image
+libraries required!
+
+[Slides for the 2026 FOSS4G Workshop are
+here.]()
+
+Using the [docker execution
+method](#running-locally-with-docker) may be
+the best option due to the uncertainty of conference internet quality. But
+GitHub Codespaces can be a good fallback option for those that want/need a
+simpler solution.
 
 ## Workshop Overview
 
-Ever wonder what GDAL is doing under the hood when you read a GeoTIFF file?
-Doubly so when the file is a Cloud-Optimized GeoTIFF (COG) on a remote server
-somewhere? Have you been wondering what this new GeoZarr thing is all about and
-how it actually works? Then there's the whole Kerchunk/VirtualiZarr indexing to
-get cloud-native access for non-cloud-native data formats, what's that about?
-
 Cloud-native geospatial is all the rage these days, and for good reason. As
-file sizes grow, layer counts increase, and analytical methods become more
-complex, the traditional download-to-the-desktop approach is quickly becoming
-untenable for many applications. It's no surprise then that users are turning
-to cloud-based tools such as Dask to scale out their analyses, or that
-traditional tooling is adopting new ways of finding and accessing data from
-cloud-based sources. But as we transition away from opening whole files to now
+data sizes grow, layer counts increase, and analytical methods become more
+complex, the traditional download-to-the-desktop approach is often untenable.
+It's no surprise then that users are turning to cloud-native tools to scale out
+their analyses. But as we transition away from opening whole files to now
 grabbing ranges of bytes off remote servers it seems all the more important to
-understand exactly how cloud-native data formats actually store data and what
+understand exactly how cloud native data formats actually store data and what
 tools are doing to access it.
 
-This workshop digs into how cloud-native geospatial data formats enable new
-operational paradigms, with a particular focus on raster data. All three
-exercises work with the same Sentinel-2 scene — even the same pixel — so the
-formats can be compared apples to apples:
+This workshop aims to dig into how cloud-native geospatial data formats are
+enabling new operational paradigms, with a focus on raster formats. We'll start
+by surveying the current cloud-native geospatial landscape to understand the
+importance of cloud native and how it is being used, including the core tenants
+of cloud-native, common formats, and how things like SpatioTemporal Asset
+Catalogs (STAC) and STAC-based tooling integrate to provide more efficient
+access paradigms.
 
-1. **Reading Cloud-Optimized GeoTIFFs the Hard Way**
-   (`01_reading-cogs-the-hard-way`): find a COG via STAC, then read it with
-   nothing but HTTP range requests and the Python standard library — parse the
-   TIFF headers by hand, chase byte offsets, and decode an image tile yourself.
-2. **Reading Zarr the Hard Way** (`02_reading-zarr-the-hard-way`): read the
-   very same scene from a Zarr v3 GeoZarr store, again by hand over plain
-   HTTP — explore the v3 metadata and codec pipeline, the geospatial
-   conventions, multiscales, and what zarr does (and does not) solve.
-3. **Free-Range Artisanal Grass-Fed Kerchunk**
-   (`03_free-range-artisanal-grass-fed-kerchunk`): hand-build a kerchunk
-   reference manifest that maps zarr chunk keys onto the COG's internal tile
-   bytes, then open the COG "as zarr" — and see the modern take on the same
-   idea with VirtualiZarr and Icechunk.
+Then we'll get hands-on to build up an understanding of how these formats work
+at a deep level. We'll extract a tile from a COG by hand, then try the same
+with Zarr data to see how those formats compare. Lastly, we'll look at
+Kerchunk/VirtualiZarr and see how these allow optimized data access for
+non-cloud-native formats.
 
 ### Prerequisites
 
@@ -83,21 +77,28 @@ dependencies installed. Three options, in rough order of ease:
   conference internet makes an external service risky.
 * **`uv`** — run JupyterLab directly on your machine; no docker required.
 
+> [!IMPORTANT]
+> Remember, this branch is `workshop`, so all the clone commands below require
+> you to select the `workshop` branch (or switch to it once you clone).
+
 ### Running in GitHub Codespaces (easiest)
 
 This method does not require any environment setup, repo cloning, or having to
-execute any code locally. However, it does depend on an external, web-based
-service, which may not be ideal in environments with unknown internet quality
-(i.e., conferences). Codespaces also sometimes have instability or weirdness
-that does not occur when executing locally. But the fact that all this option
-requires is a GitHub account and a web browser means it can be a great solution
-for many users.
+execute any code locally. All this option requires is a GitHub account and a
+web browser, making it simple solution for many users. However, it does depend
+on an external, web-based service, which may not be ideal in environments with
+unknown internet quality (i.e., conferences).
 
-To use GitHub Codespaces, first login to GitHub. Then, browse to [the project
-repo in GitHub](https://github.com/jkeifer/cng-raster-formats). There, click
-the green `<> Code` dropdown button, select the `Codespaces` tab in the
-dropdown menu, then click the button to add a new codespace from the
-`workshop` branch.
+To use GitHub Codespaces, first login to GitHub. Then, go to this link
+https://codespaces.new/jkeifer/cng-raster-formats/tree/workshop and click the
+green "Create Codespace" button.
+
+(To do the same as that link manually, browse to [the project repo in
+Github](https://github.com/jkeifer/cng-raster-formats). There, click the green
+`<> Code` dropdown button, select the `Codespaces` tab in the dropdown menu. On
+that menu click the three dot menu and select "New with options...". On the
+screen the opens changes the branch to the `workshop` branch, usa all the other
+defaults, and click the green "Create Codespace" button.)
 
 The codespace will launch in a new browser tab, running the web version of VS
 Code. The notebooks can be opened and executed directly in this interface. The
@@ -200,7 +201,7 @@ here](https://docs.google.com/presentation/d/1qFckA0prY604I4dMkQlF1ZM-QSKS2ou4-Y
 
 | Date | Location | Slides | Notes |
 | ---- | -------- | ------ | ----- |
-| TBD (2026) | TBD | TBD | 2026 presentation details to be announced. |
+| 2026-08-30 | [FOSS4G Hiroshima, Japan](https://talks.osgeo.org/foss4g-2026-workshop/talk/8ZUPMV/) | [Link](https://docs.google.com/presentation/d/1qiGfzzhOrWNkxmfskMmoIji-JGGjj2s-8KcUhnBPzUM) | Full workshop presentation. |
 | 2025-11-17 | [FOSS4G Auckland, NZ](https://talks.osgeo.org/foss4g-2025/talk/KZGHTZ/) | [Link](https://docs.google.com/presentation/d/1oJ48g9Oc-60MlG2_wFTlAHo42SMYFGeiRG66Pc6cr48) | Full workshop presentation. |
 | 2025-11-03 | [FOSS4G NA Reston, VA, USA](https://talks.osgeo.org/foss4g-na-2025/talk/MN7NCT/) | [Link](https://docs.google.com/presentation/d/1oJ48g9Oc-60MlG2_wFTlAHo42SMYFGeiRG66Pc6cr48) | Full workshop presentation. |
 | 2025-05-01 | CNG Conference | [Link](https://docs.google.com/presentation/d/1nBKAhig0mXkxbzxLRGgu9ygY7Uc028pbdL4qQmlyZ4c/) | Partial presentation (only COG notebook) as part of [a combined workshop on CNG for EO](https://conference.cloudnativegeo.org/CNGConference2025#/workshops?lang=en#CNG%20Workshop:~:text=CNG%20for%20EO%20and%20Deep%20Dive%20into%20Cloud%2DNative%20Geospatial%20Raster%20Formats). |

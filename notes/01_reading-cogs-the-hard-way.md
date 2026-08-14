@@ -5,7 +5,6 @@ This file contains the original content of cells marked for note-taking.
 ## cell0
 
 ```python
-#| scrub-note: cell0
 header = url_read_bytes(href, 0, 4)
 print(header)
 print(header.hex())
@@ -15,7 +14,6 @@ print(binary(header))
 ## cell1
 
 ```python
-#| scrub-note: cell1
 magic_number = struct.unpack(f'{endianness}H', header[2:4])[0]
 magic_number
 ```
@@ -23,7 +21,6 @@ magic_number
 ## cell2
 
 ```python
-#| scrub-note: cell2
 ifd_offset_bytes = url_read_bytes(href, 4, 8)
 print(ifd_offset_bytes)
 print(binary(ifd_offset_bytes))
@@ -32,7 +29,6 @@ print(binary(ifd_offset_bytes))
 ## cell3
 
 ```python
-#| scrub-note: cell3
 ifd_offset = struct.unpack(f'{endianness}I', ifd_offset_bytes)[0]
 print(ifd_offset)
 ```
@@ -40,7 +36,6 @@ print(ifd_offset)
 ## cell4
 
 ```python
-#| scrub-note: cell4
 tags_start = ifd_offset + 2
 tags_count = struct.unpack(
     f'{endianness}H', url_read_bytes(href, ifd_offset, tags_start)
@@ -51,7 +46,6 @@ tags_count
 ## cell5
 
 ```python
-#| scrub-note: cell5
 tag_size = 12  # because we only support standard TIFF
 tags_end = tags_start + (tags_count * tag_size)
 tags_bytes = url_read_bytes(href, tags_start, tags_end)
@@ -62,7 +56,6 @@ print(binary(tags_bytes))
 ## cell6
 
 ```python
-#| scrub-note: cell6
 next_ifd_offset = struct.unpack(
     f'{endianness}I', url_read_bytes(href, tags_end, tags_end + 4)
 )[0]
@@ -72,7 +65,6 @@ next_ifd_offset
 ## cell7
 
 ```python
-#| scrub-note: cell7
 for i in range(0, len(tags_bytes), tag_size):
     tb = tags_bytes[i : i + tag_size]
     print(tb)
@@ -82,7 +74,6 @@ for i in range(0, len(tags_bytes), tag_size):
 ## cell8
 
 ```python
-#| scrub-note: cell8
 # image column count (width)
 cols = struct.unpack(endianness + 'H', tags[256]['value'][0 : struct.calcsize('H')])[0]
 
@@ -100,29 +91,35 @@ print(f'Image size is {cols} x {rows}')
 ## cell9
 
 ```python
-#| scrub-note: cell9
 unpack_tag(tags[257], endianness)
 ```
 
 ## cell10
 
 ```python
-#| scrub-note: cell10
 unpack_tag(tags[324], endianness)
 ```
 
 ## cell11
 
 ```python
-#| scrub-note: cell11
 compression
 ```
 
 ## cell12
 
 ```python
-#| scrub-note: cell12
 sample_format, bits_per_sample
+```
+
+## cell13
+
+```python
+# value_offset and value_scale from the above GDAL metadata
+value_offset = -0.1
+value_scale = 0.0001
+tile_array_scaled_offset = (tile_array_unfiltered * value_scale) + value_offset
+tile_array_scaled_offset
 ```
 
 ---
