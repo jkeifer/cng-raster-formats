@@ -5,7 +5,7 @@ how data access works under the hood with hands-on Python exercises, no image
 libraries required!
 
 [Slides for the 2026 FOSS4G Workshop are
-here.]()
+here.](https://docs.google.com/presentation/d/1qiGfzzhOrWNkxmfskMmoIji-JGGjj2s-8KcUhnBPzUM)
 
 Using the [docker execution
 method](#running-locally-with-docker) may be
